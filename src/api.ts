@@ -148,11 +148,41 @@ export async function checkBackend(): Promise<boolean> {
   }
 }
 
+export interface UserProfile {
+  id: number
+  email: string
+  nickname: string
+}
+
+export interface UserSignUpData {
+  email: string
+  password: string
+  nickname: string
+  preferredGenreCodes?: string[]
+  storyPreferenceAnswer?: string
+  recentFavoriteContentAnswer?: string
+}
+
+export function fetchGenres() {
+  return request<ApiGenre[]>('/genres')
+}
+
+export function signUp(data: UserSignUpData) {
+  return request<{ id: number }>('/users', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+export function fetchUserProfile(userId: number) {
+  return request<UserProfile>('/users/me', { userId })
+}
+
 /**
- * Returns a persistent demo user id: reuses the one in localStorage,
- * otherwise registers a fresh user and stores its id.
+ * Returns a persistent user id from localStorage if validated against the backend,
+ * otherwise returns null.
  */
-export async function ensureUser(): Promise<number> {
+export async function ensureUser(): Promise<number | null> {
   const stored = localStorage.getItem(USER_ID_STORAGE_KEY)
   if (stored) {
     const id = Number(stored)
@@ -160,19 +190,10 @@ export async function ensureUser(): Promise<number> {
       await request(`/users/me`, { userId: id })
       return id
     } catch {
-      localStorage.removeItem(USER_ID_STORAGE_KEY) // stale id (e.g. DB reset)
+      localStorage.removeItem(USER_ID_STORAGE_KEY) // stale id
     }
   }
-  const created = await request<{ id: number }>('/users', {
-    method: 'POST',
-    body: JSON.stringify({
-      email: `demo-${Date.now()}@Litory.io`,
-      password: 'Litory-demo-1234',
-      nickname: 'Litory-reader',
-    }),
-  })
-  localStorage.setItem(USER_ID_STORAGE_KEY, String(created.id))
-  return created.id
+  return null
 }
 
 export function fetchBooks(keyword?: string, genreCode?: string) {

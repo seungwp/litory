@@ -47,6 +47,11 @@ import {
   logInteraction,
   reasonToSentence,
   refreshRecommendationFeed,
+  signUp,
+  fetchGenres,
+  fetchUserProfile,
+  type UserProfile,
+  type ApiGenre,
 } from './api'
 import {
   BOOKS,
@@ -702,7 +707,17 @@ function ViewerModal({ book, onClose }: { book: Book; onClose: () => void }) {
 //  Header: utility bar + logo/search + category nav
 // ═══════════════════════════════════════════════════════════════
 
-function UtilityBar({ apiOnline }: { apiOnline: boolean | null }) {
+function UtilityBar({
+  apiOnline,
+  userProfile,
+  onSignUpClick,
+  onSignOut,
+}: {
+  apiOnline: boolean | null
+  userProfile: UserProfile | null
+  onSignUpClick: () => void
+  onSignOut: () => void
+}) {
   return (
     <div className="border-b border-gray-100 bg-white">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-1.5 text-[11px] text-gray-400">
@@ -735,9 +750,22 @@ function UtilityBar({ apiOnline }: { apiOnline: boolean | null }) {
             100% Free Access
           </span>
           <span className="text-gray-200">|</span>
-          <a href="#" onClick={(e) => e.preventDefault()} className="hover:text-gray-700">
-            Sign In
-          </a>
+          {apiOnline && userProfile ? (
+            <>
+              <span className="text-gray-600 font-medium flex items-center gap-1">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                {userProfile.nickname}
+              </span>
+              <span className="text-gray-200">|</span>
+              <button onClick={onSignOut} className="hover:text-gray-700 font-medium">
+                Sign Out
+              </button>
+            </>
+          ) : (
+            <button onClick={onSignUpClick} className="hover:text-dancheong font-semibold text-gray-600">
+              Sign In / Sign Up
+            </button>
+          )}
           <span className="text-gray-200">|</span>
           <a href="#" onClick={(e) => e.preventDefault()} className="hover:text-gray-700">
             Help
@@ -746,6 +774,361 @@ function UtilityBar({ apiOnline }: { apiOnline: boolean | null }) {
           <button className="flex items-center gap-0.5 hover:text-gray-700">
             English <ChevronDown className="h-3 w-3" />
           </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function OnboardingModal({
+  onClose,
+  onSuccess,
+}: {
+  onClose: () => void
+  onSuccess: (userId: number) => void
+}) {
+  const [step, setStep] = useState(1)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [nickname, setNickname] = useState('')
+  const [availableGenres, setAvailableGenres] = useState<ApiGenre[]>([])
+  const [selectedGenres, setSelectedGenres] = useState<string[]>([])
+  const [storyPreference, setStoryPreference] = useState('')
+  const [recentFavorite, setRecentFavorite] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  // Load genres for step 2
+  useEffect(() => {
+    if (step === 2) {
+      fetchGenres()
+        .then((genres) => setAvailableGenres(genres))
+        .catch(() => {
+          // Fallback to static genres if API fails
+          setAvailableGenres([
+            { id: 1, code: 'CLASSIC', name: 'Classic Literature', description: '' },
+            { id: 2, code: 'POETRY', name: 'Poetry & Lyric', description: '' },
+            { id: 3, code: 'FICTION', name: 'Modern Fiction', description: '' },
+            { id: 4, code: 'FOLKLORE', name: 'Folklore & Legend', description: '' },
+            { id: 5, code: 'ESSAY', name: 'Essays & Travels', description: '' },
+          ])
+        })
+    }
+  }, [step])
+
+  const handleNextStep1 = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!email || !password || !nickname) {
+      setError('Please fill in all fields.')
+      return
+    }
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters.')
+      return
+    }
+    setError(null)
+    setStep(2)
+  }
+
+  const handleGenreToggle = (code: string) => {
+    setSelectedGenres((prev) =>
+      prev.includes(code)
+        ? prev.filter((c) => c !== code)
+        : prev.length >= 5
+        ? prev
+        : [...prev, code],
+    )
+  }
+
+  const handleNextStep2 = () => {
+    setStep(3)
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    setError(null)
+    try {
+      const result = await signUp({
+        email,
+        password,
+        nickname,
+        preferredGenreCodes: selectedGenres,
+        storyPreferenceAnswer: storyPreference || undefined,
+        recentFavoriteContentAnswer: recentFavorite || undefined,
+      })
+      localStorage.setItem('Litory.userId', String(result.id))
+      onSuccess(result.id)
+    } catch (err: any) {
+      setError(err.message || 'Registration failed. Please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleGuestLogin = async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const guestEmail = `guest-${Date.now()}@Litory.io`
+      const guestNickname = `Guest Reader`
+      const result = await signUp({
+        email: guestEmail,
+        password: 'Litory-guest-1234',
+        nickname: guestNickname,
+        preferredGenreCodes: [],
+      })
+      localStorage.setItem('Litory.userId', String(result.id))
+      onSuccess(result.id)
+    } catch (err: any) {
+      setError(err.message || 'Guest login failed.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Parse leaf names for display in the grid
+  const getCleanGenreName = (genre: ApiGenre) => {
+    const name = genre.name
+    const leaf = name.split('>').pop()?.trim() ?? name
+    return leaf
+      .toLowerCase()
+      .replace(/\b\w/g, (c) => c.toUpperCase())
+      .replace(/^Kdc\s*/i, '')
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+      <div className="animate-scale-in relative bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden flex flex-col max-h-[90vh]">
+        
+        {/* Progress Bar */}
+        <div className="h-1.5 w-full bg-gray-100 flex">
+          <div className={`h-full bg-dancheong transition-all duration-300 ${
+            step === 1 ? 'w-1/3' : step === 2 ? 'w-2/3' : 'w-full'
+          }`} />
+        </div>
+
+        {/* Header */}
+        <div className="px-6 pt-6 pb-4 border-b border-gray-100 flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-bold text-gray-900">
+              {step === 1 && 'Create Your Account'}
+              {step === 2 && 'Choose Your Taste'}
+              {step === 3 && 'AI Personalization Survey'}
+            </h2>
+            <p className="text-xs text-gray-400 mt-0.5">
+              Step {step} of 3
+            </p>
+          </div>
+          <button 
+            onClick={onClose} 
+            className="rounded p-1.5 text-gray-400 transition hover:bg-gray-100 hover:text-gray-900"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto px-6 py-4">
+          {error && (
+            <div className="mb-4 rounded-lg bg-rose-50 border border-rose-100 p-3 text-xs text-rose-600 font-medium">
+              {error}
+            </div>
+          )}
+
+          {step === 1 && (
+            <form onSubmit={handleNextStep1} className="space-y-4">
+              <div className="text-center py-4">
+                <span className="inline-flex items-center justify-center h-12 w-12 rounded-full bg-[#e8fbf6] text-dancheong mb-3">
+                  <User className="h-6 w-6" />
+                </span>
+                <h3 className="text-sm font-semibold text-gray-900">Welcome to Litory</h3>
+                <p className="text-xs text-gray-500 mt-1">
+                  Create an account to save your reading streaks and unlock customized recommendations.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="name@example.com"
+                  className="w-full rounded-lg border border-gray-200 px-3.5 py-2 text-sm focus:border-dancheong focus:ring-1 focus:ring-dancheong focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                  Password
+                </label>
+                <input
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="At least 8 characters"
+                  className="w-full rounded-lg border border-gray-200 px-3.5 py-2 text-sm focus:border-dancheong focus:ring-1 focus:ring-dancheong focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                  Nickname
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={nickname}
+                  onChange={(e) => setNickname(e.target.value)}
+                  placeholder="How should we call you?"
+                  className="w-full rounded-lg border border-gray-200 px-3.5 py-2 text-sm focus:border-dancheong focus:ring-1 focus:ring-dancheong focus:outline-none"
+                />
+              </div>
+
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  className="w-full rounded-full bg-dancheong py-2.5 text-sm font-bold text-white transition hover:bg-dancheong/90 flex items-center justify-center gap-1.5"
+                >
+                  Next: Genre Selection <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div className="flex items-center my-4">
+                <div className="flex-1 border-t border-gray-200" />
+                <span className="px-3 text-[10px] uppercase text-gray-400 tracking-wider">or</span>
+                <div className="flex-1 border-t border-gray-200" />
+              </div>
+
+              <button
+                type="button"
+                onClick={handleGuestLogin}
+                disabled={loading}
+                className="w-full rounded-full border border-gray-200 py-2.5 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 flex items-center justify-center gap-1.5"
+              >
+                {loading ? <Loader2 className="h-4 w-4 animate-spin text-gray-400" /> : 'Continue as Guest'}
+              </button>
+            </form>
+          )}
+
+          {step === 2 && (
+            <div className="space-y-4">
+              <div className="text-center py-2">
+                <span className="inline-flex items-center justify-center h-12 w-12 rounded-full bg-[#e8fbf6] text-dancheong mb-3">
+                  <Library className="h-6 w-6" />
+                </span>
+                <p className="text-xs text-gray-500">
+                  Select up to 5 favorite literary genres to refine your initial feed.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 max-h-[40vh] overflow-y-auto pr-1">
+                {availableGenres.map((genre) => {
+                  const isSelected = selectedGenres.includes(genre.code)
+                  const cleanName = getCleanGenreName(genre)
+                  return (
+                    <button
+                      key={genre.code}
+                      onClick={() => handleGenreToggle(genre.code)}
+                      className={`flex items-center justify-between rounded-xl border p-3.5 text-left transition ${
+                        isSelected
+                          ? 'border-dancheong bg-[#e8fbf6] text-dancheong ring-1 ring-dancheong'
+                          : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                      }`}
+                    >
+                      <span className="text-xs font-semibold leading-tight line-clamp-2">{cleanName}</span>
+                      {isSelected && <Check className="h-4 w-4 shrink-0 text-dancheong ml-1" />}
+                    </button>
+                  )
+                })}
+              </div>
+
+              <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => setStep(1)}
+                  className="rounded-full border border-gray-200 px-5 py-2.5 text-xs font-semibold text-gray-600 transition hover:bg-gray-50"
+                >
+                  Back
+                </button>
+                <button
+                  type="button"
+                  onClick={handleNextStep2}
+                  className="rounded-full bg-dancheong px-5 py-2.5 text-xs font-bold text-white transition hover:bg-dancheong/90"
+                >
+                  Next: Survey ({selectedGenres.length}/5)
+                </button>
+              </div>
+            </div>
+          )}
+
+          {step === 3 && (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="text-center py-2">
+                <span className="inline-flex items-center justify-center h-12 w-12 rounded-full bg-[#e8fbf6] text-dancheong mb-3">
+                  <MessageCircle className="h-6 w-6" />
+                </span>
+                <p className="text-xs text-gray-500">
+                  Help our recommendation AI analyze your unique tastes by sharing your preferences.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                  What kind of story pulls at your heart the most?
+                </label>
+                <textarea
+                  value={storyPreference}
+                  onChange={(e) => setStoryPreference(e.target.value)}
+                  placeholder="e.g. I am most drawn to bittersweet stories about memory, longing, and quiet emotional change..."
+                  className="w-full h-20 rounded-lg border border-gray-200 px-3.5 py-2 text-xs focus:border-dancheong focus:ring-1 focus:ring-dancheong focus:outline-none resize-none"
+                  maxLength={1000}
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                  Tell us about a recent book, film, or drama that stayed with you.
+                </label>
+                <textarea
+                  value={recentFavorite}
+                  onChange={(e) => setRecentFavorite(e.target.value)}
+                  placeholder="e.g. A reflective drama about grief and family stayed with me for a long time..."
+                  className="w-full h-20 rounded-lg border border-gray-200 px-3.5 py-2 text-xs focus:border-dancheong focus:ring-1 focus:ring-dancheong focus:outline-none resize-none"
+                  maxLength={1000}
+                />
+              </div>
+
+              <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => setStep(2)}
+                  disabled={loading}
+                  className="rounded-full border border-gray-200 px-5 py-2.5 text-xs font-semibold text-gray-600 transition hover:bg-gray-50"
+                >
+                  Back
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="rounded-full bg-dancheong px-5 py-2.5 text-xs font-bold text-white transition hover:bg-dancheong/90 flex items-center gap-1.5"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" /> Personalizing...
+                    </>
+                  ) : (
+                    'Complete & Customize Feed'
+                  )}
+                </button>
+              </div>
+            </form>
+          )}
         </div>
       </div>
     </div>
@@ -1904,11 +2287,13 @@ function Footer() {
 // ═══════════════════════════════════════════════════════════════
 //  App Root
 // ═══════════════════════════════════════════════════════════════
-
 export default function App() {
   const [selected, setSelected] = useState<Book | null>(null)
   const [apiOnline, setApiOnline] = useState<boolean | null>(null)
   const [userId, setUserId] = useState<number | null>(null)
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
+  const [showOnboarding, setShowOnboarding] = useState(false)
+  
   // recent views/searches this session — fuels the top recommendation banner
   const [engagements, setEngagements] = useState<Engagement[]>([])
   const [dismissedAt, setDismissedAt] = useState(0)
@@ -1922,7 +2307,24 @@ export default function App() {
     )
   }, [])
 
-  // Probe the backend once on mount; register/restore the demo user if up.
+  // Load profile when userId changes
+  useEffect(() => {
+    if (userId && apiOnline) {
+      fetchUserProfile(userId)
+        .then((profile) => setUserProfile(profile))
+        .catch(() => {
+          // If fetch fails (stale user in DB), clear it
+          localStorage.removeItem('Litory.userId')
+          setUserId(null)
+          setUserProfile(null)
+          setShowOnboarding(true)
+        })
+    } else {
+      setUserProfile(null)
+    }
+  }, [userId, apiOnline])
+
+  // Probe the backend once on mount; register/restore the user if up.
   useEffect(() => {
     let cancelled = false
     ;(async () => {
@@ -1932,9 +2334,19 @@ export default function App() {
       if (online) {
         try {
           const id = await ensureUser()
-          if (!cancelled) setUserId(id)
+          if (!cancelled) {
+            if (id) {
+              setUserId(id)
+            } else {
+              setUserId(null)
+              setShowOnboarding(true)
+            }
+          }
         } catch {
-          if (!cancelled) setUserId(null)
+          if (!cancelled) {
+            setUserId(null)
+            setShowOnboarding(true)
+          }
         }
       }
     })()
@@ -1943,6 +2355,12 @@ export default function App() {
     }
   }, [])
 
+  const handleSignOut = useCallback(() => {
+    localStorage.removeItem('Litory.userId')
+    setUserId(null)
+    setUserProfile(null)
+    setShowOnboarding(true)
+  }, [])
   /** Open a book; API books get detail hydration + a VIEW interaction log */
   const openBook = useCallback(
     (book: Book) => {
@@ -1997,7 +2415,12 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#f5f5f7] font-sans text-[#1d1d1f]">
-      <UtilityBar apiOnline={apiOnline} />
+      <UtilityBar
+        apiOnline={apiOnline}
+        userProfile={userProfile}
+        onSignUpClick={() => setShowOnboarding(true)}
+        onSignOut={handleSignOut}
+      />
       <MainHeader
         apiOnline={apiOnline === true}
         onOpenBook={openBook}
@@ -2032,6 +2455,16 @@ export default function App() {
 
       {selected && (
         <ViewerModal book={selected} onClose={() => setSelected(null)} />
+      )}
+
+      {showOnboarding && (
+        <OnboardingModal
+          onClose={() => setShowOnboarding(false)}
+          onSuccess={(id) => {
+            setUserId(id)
+            setShowOnboarding(false)
+          }}
+        />
       )}
     </div>
   )
