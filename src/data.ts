@@ -129,7 +129,7 @@ export const BOOKS: Book[] = [
     episodeMinutes: 9,
     kContentTags: ['sci-fi', 'heartwarming', 'nature'],
     description:
-      'A world ended by dust storms — and life blooming again. Only the first English edition survives; preserved in the Tory archive.',
+      'A world ended by dust storms — and life blooming again. Only the first English edition survives; preserved in the tory archive.',
   },
   {
     id: 7,
@@ -249,7 +249,7 @@ export const BOOKS: Book[] = [
     episodeMinutes: 9,
     kContentTags: ['thriller', 'dark', 'k-movie'],
     description:
-      'A single accident, seven years of nightmare. Out of print in translation — urgently preserved in the Tory archive.',
+      'A single accident, seven years of nightmare. Out of print in translation — urgently preserved in the tory archive.',
   },
   {
     id: 15,
@@ -382,7 +382,7 @@ export const COMMUNITY_POSTS: CommunityPost[] = [
     id: 2,
     title: 'July Book Club · Human Acts — Week 2 reading thread',
     bookId: 9,
-    author: 'Tory Book Club',
+    author: 'tory book club',
     country: '🌏',
     tag: 'Book Club',
     replies: 96,
@@ -446,7 +446,7 @@ export const PLANS: Plan[] = [
   },
   {
     id: 'monthly',
-    name: 'Tory Unlimited',
+    name: 'tory unlimited',
     price: '$9.9',
     period: 'per month',
     tagline: 'Every translation. Every language. One click.',

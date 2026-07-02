@@ -1,17 +1,19 @@
 // ─────────────────────────────────────────────────────────────
-//  Tory · Korean literature streaming platform — domain types
+//  tory · Korean literature streaming platform — domain types
 // ─────────────────────────────────────────────────────────────
 
 /**
  * Book
- * One translated Korean work integrated into the Tory cloud library.
+ * One translated Korean work integrated into the tory cloud library.
  * Every UI component consumes data strictly through this interface.
  */
 export interface Book {
   /** Internal unique identifier */
   id: number
+  /** Optional source identifier from the md_books filename/metadata */
+  bookId?: string
   /** Original Korean title */
-  originalTitle: string
+  originalTitle?: string
   /** Primary English (translated) title — shown first to global readers */
   translatedTitle: string
   /** Author name (romanized) */
@@ -20,7 +22,7 @@ export interface Book {
   genre: string
   /** Language codes with an existing translation (e.g. ['EN', 'FR']) */
   translatedLanguages: string[]
-  /** true → out of print, preserved exclusively in the Tory archive */
+  /** true → out of print, preserved exclusively in the tory archive */
   isOutOfPrint: boolean
   /** Short pitch shown on cards and in the viewer */
   description: string
@@ -36,6 +38,10 @@ export interface Book {
   year?: number
   /** Opening passage shown in the e-book viewer preview */
   excerpt?: string
+  /** Source URL from the md_books metadata */
+  sourceUrl?: string
+  /** true → this book came from the backend API (id is a server id) */
+  fromApi?: boolean
 }
 
 /** One horizontally-scrolling curated shelf */

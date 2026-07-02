@@ -17,7 +17,7 @@ export default {
         },
         hanji: '#f5f1e8',
         celadon: '#7ba894',
-        dancheong: '#c9452f',
+        dancheong: '#00d4a4',
       },
       keyframes: {
         'fade-up': {

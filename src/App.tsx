@@ -25,19 +25,34 @@ import {
   MessageCircle,
   ThumbsUp,
   PenSquare,
+  RefreshCw,
+  Loader2,
 } from 'lucide-react'
 import type { Book } from './types'
 import {
+  apiDetailToBook,
+  apiListItemToBook,
+  apiRecItemToBook,
+  checkBackend,
+  ensureUser,
+  fetchBookDetail,
+  fetchBooks,
+  fetchRecommendationFeed,
+  logInteraction,
+  refreshRecommendationFeed,
+} from './api'
+import {
   BOOKS,
+  BESTSELLER_GENRES,
   COMMUNITY_POSTS,
   CURATIONS,
+  MODERN_BESTSELLERS,
   GENRES,
   LANGUAGE_LABEL,
   LIVE_SESSIONS,
-  PLANS,
   QUICK_READS,
   TASTES,
-} from './data'
+} from './catalog'
 
 // ═══════════════════════════════════════════════════════════════
 //  Demo helpers — deterministic pseudo ratings / reader counts
@@ -57,20 +72,18 @@ const readersOf = (b: Book) => {
 function BookCover({ book, className = '' }: { book: Book; className?: string }) {
   return (
     <div
-      className={`relative flex flex-col justify-between overflow-hidden rounded p-2.5 text-white ${className}`}
+      className={`relative flex flex-col justify-between overflow-hidden rounded-[1rem] p-2.5 text-white shadow-[0_10px_30px_rgba(0,0,0,0.12)] ring-1 ring-black/5 ${className}`}
       style={{
         background: `linear-gradient(150deg, ${book.coverColor} 0%, ${book.coverColor}cc 55%, rgba(0,0,0,0.5) 100%)`,
       }}
     >
-      <span className="absolute inset-y-0 left-0 w-[5px] bg-black/25" />
-      <span className="absolute inset-y-0 left-[5px] w-px bg-white/25" />
       <BookOpen className="h-3.5 w-3.5 opacity-70" strokeWidth={1.6} />
       <div className="pl-0.5">
         <p className="font-serif text-[12px] font-bold leading-snug drop-shadow-sm line-clamp-3">
           {book.translatedTitle}
         </p>
         <p className="mt-0.5 text-[9px] font-medium text-white/70">
-          {book.originalTitle}
+          {book.originalTitle ?? book.genre}
         </p>
       </div>
     </div>
@@ -81,11 +94,11 @@ function BookCover({ book, className = '' }: { book: Book; className?: string })
 function BookTags({ book }: { book: Book }) {
   return (
     <div className="mt-1 flex flex-wrap gap-1">
-      <span className="rounded-sm bg-gray-100 px-1 py-px text-[10px] text-gray-500">
+      <span className="rounded-full bg-black/5 px-1.5 py-0.5 text-[10px] text-black/55">
         {book.translatedLanguages.length} languages
       </span>
       {book.isOutOfPrint && (
-        <span className="rounded-sm bg-red-50 px-1 py-px text-[10px] font-medium text-dancheong">
+        <span className="rounded-full bg-black/5 px-1.5 py-0.5 text-[10px] font-medium text-black/55">
           Archive only
         </span>
       )}
@@ -97,8 +110,8 @@ function BookTags({ book }: { book: Book }) {
 function RatingRow({ book }: { book: Book }) {
   return (
     <p className="mt-1 flex items-center gap-1 text-[11px] text-gray-500">
-      <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-      <span className="font-semibold text-gray-700">{ratingOf(book)}</span>
+      <Star className="h-3 w-3 fill-black/35 text-black/35" />
+      <span className="font-medium text-[#1d1d1f]">{ratingOf(book)}</span>
       <span className="text-gray-400">({readersOf(book)} readers)</span>
     </p>
   )
@@ -122,15 +135,15 @@ function BookItem({
       className={`group relative flex w-32 shrink-0 flex-col text-left sm:w-36 ${className}`}
     >
       {matchScore !== undefined && (
-        <span className="absolute left-1.5 top-1.5 z-10 rounded-sm bg-dancheong px-1.5 py-0.5 text-[10px] font-bold text-white">
+        <span className="absolute left-1.5 top-1.5 z-10 rounded-full bg-white/90 px-1.5 py-0.5 text-[10px] font-semibold text-[#1d1d1f] shadow-sm backdrop-blur">
           {matchScore}% match
         </span>
       )}
       <BookCover
         book={book}
-        className="aspect-[3/4] w-full shadow-sm transition group-hover:shadow-md"
+        className="aspect-[3/4] w-full transition duration-300 group-hover:scale-[1.01]"
       />
-      <h3 className="mt-2 text-[13px] font-semibold leading-snug text-gray-900 line-clamp-2 group-hover:underline">
+      <h3 className="mt-2 text-[13px] font-medium leading-snug text-[#1d1d1f] line-clamp-2 group-hover:underline">
         {book.translatedTitle}
       </h3>
       <p className="mt-0.5 text-[11px] text-gray-500 line-clamp-1">{book.author}</p>
@@ -153,18 +166,18 @@ function RankedItem({
   return (
     <button
       onClick={() => onOpen(book)}
-      className="group flex w-full items-center gap-3 rounded-lg px-2 py-2.5 text-left transition hover:bg-gray-50"
+      className="group flex w-full items-center gap-3 rounded-[1.25rem] px-3 py-3 text-left transition hover:bg-black/[0.03]"
     >
       <span
         className={`w-7 shrink-0 text-center text-xl font-extrabold italic ${
-          rank <= 3 ? 'text-dancheong' : 'text-gray-300'
+          rank <= 3 ? 'text-[#1d1d1f]' : 'text-gray-300'
         }`}
       >
         {rank}
       </span>
       <BookCover book={book} className="h-24 w-[72px] shrink-0" />
       <div className="min-w-0 flex-1">
-        <h3 className="text-sm font-semibold text-gray-900 line-clamp-1 group-hover:underline">
+        <h3 className="text-sm font-medium text-[#1d1d1f] line-clamp-1 group-hover:underline">
           {book.translatedTitle}
         </h3>
         <p className="mt-0.5 text-xs text-gray-500 line-clamp-1">
@@ -190,14 +203,16 @@ function SectionHeader({
   return (
     <div className="mb-4 flex items-end justify-between">
       <div>
-        <h2 className="text-lg font-bold text-gray-900 sm:text-xl">{title}</h2>
-        {subtitle && <p className="mt-0.5 text-[13px] text-gray-500">{subtitle}</p>}
+        <h2 className="text-xl font-semibold tracking-tight text-[#1d1d1f] sm:text-[1.7rem]">
+          {title}
+        </h2>
+        {subtitle && <p className="mt-1 text-[13px] text-gray-500">{subtitle}</p>}
       </div>
       {action && (
         <a
           href="#"
           onClick={(e) => e.preventDefault()}
-          className="flex shrink-0 items-center gap-0.5 text-xs font-medium text-gray-500 hover:text-gray-900"
+          className="flex shrink-0 items-center gap-0.5 text-xs font-medium text-gray-500 hover:text-[#1d1d1f]"
         >
           {action} <ChevronRight className="h-3.5 w-3.5" />
         </a>
@@ -226,7 +241,7 @@ function ViewerModal({ book, onClose }: { book: Book; onClose: () => void }) {
 
   const body =
     book.excerpt ??
-    `${book.description}\n\n— This preview is demo text reconstructed from the opening of “${book.translatedTitle}”. In the full service, the complete translation streams from the Tory cloud library.`
+    `${book.description}\n\n— This preview is demo text reconstructed from the opening of “${book.translatedTitle}”. In the full service, the complete translation streams from the tory cloud library.`
 
   return (
     <div
@@ -248,7 +263,7 @@ function ViewerModal({ book, onClose }: { book: Book; onClose: () => void }) {
             <h2 className="mt-1 text-lg font-bold leading-tight text-gray-900">
               {book.translatedTitle}
             </h2>
-            <p className="text-sm text-gray-500">{book.originalTitle}</p>
+            <p className="text-sm text-gray-500">{book.originalTitle ?? book.genre}</p>
             <p className="mt-1 text-xs text-gray-500">
               {book.author}
               {book.year ? ` · ${book.year}` : ''}
@@ -267,10 +282,10 @@ function ViewerModal({ book, onClose }: { book: Book; onClose: () => void }) {
             ))}
           </div>
           {book.isOutOfPrint && (
-            <p className="rounded bg-red-50 p-2 text-[11px] leading-relaxed text-dancheong">
+            <p className="rounded bg-[#e8fbf6] p-2 text-[11px] leading-relaxed text-dancheong">
               <Archive className="mr-1 inline h-3 w-3" />
               Out of print in stores — permanently readable only through the
-              Tory cloud archive.
+              tory cloud archive.
             </p>
           )}
           <div className="mt-auto rounded border border-gray-200 bg-white p-3">
@@ -292,7 +307,7 @@ function ViewerModal({ book, onClose }: { book: Book; onClose: () => void }) {
           <div className="flex items-center justify-between border-b border-gray-200 px-4 py-2.5">
             <div className="flex items-center gap-1.5 text-xs font-medium text-gray-500">
               <BookOpen className="h-4 w-4" />
-              Tory Reader · Preview
+              tory reader · preview
             </div>
             <div className="flex items-center gap-1">
               <button
@@ -313,7 +328,7 @@ function ViewerModal({ book, onClose }: { book: Book; onClose: () => void }) {
               <button
                 onClick={onClose}
                 title="Close (Esc)"
-                className="rounded p-1.5 text-gray-500 transition hover:bg-red-50 hover:text-dancheong"
+                className="rounded p-1.5 text-gray-500 transition hover:bg-[#e8fbf6] hover:text-dancheong"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -363,14 +378,33 @@ function ViewerModal({ book, onClose }: { book: Book; onClose: () => void }) {
 //  Header: utility bar + logo/search + category nav
 // ═══════════════════════════════════════════════════════════════
 
-function UtilityBar() {
+function UtilityBar({ apiOnline }: { apiOnline: boolean | null }) {
   return (
     <div className="border-b border-gray-100 bg-white">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-1.5 text-[11px] text-gray-400">
         <div className="flex items-center gap-3">
-          <span className="font-semibold text-gray-500">Tory</span>
+          <span className="font-semibold text-gray-500">tory</span>
           <span className="hidden sm:inline">For Publishers</span>
           <span className="hidden sm:inline">For Translators</span>
+          {apiOnline !== null && (
+            <span
+              className={`hidden items-center gap-1 sm:flex ${
+                apiOnline ? 'text-emerald-500' : 'text-gray-300'
+              }`}
+              title={
+                apiOnline
+                  ? 'Connected to the tory backend'
+                  : 'Backend unreachable — showing bundled demo data'
+              }
+            >
+              <span
+                className={`h-1.5 w-1.5 rounded-full ${
+                  apiOnline ? 'bg-emerald-500' : 'bg-gray-300'
+                }`}
+              />
+              {apiOnline ? 'Live API' : 'Demo data'}
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-3">
           <a href="#membership" className="hover:text-gray-700">
@@ -394,30 +428,118 @@ function UtilityBar() {
   )
 }
 
-function MainHeader() {
+function MainHeader({
+  apiOnline,
+  onOpenBook,
+}: {
+  apiOnline: boolean
+  onOpenBook: (b: Book) => void
+}) {
+  const [query, setQuery] = useState('')
+  const [results, setResults] = useState<Book[] | null>(null)
+  const [searching, setSearching] = useState(false)
+
+  const runSearch = async () => {
+    const keyword = query.trim()
+    if (!keyword) return
+    setSearching(true)
+    try {
+      if (apiOnline) {
+        const list = await fetchBooks(keyword)
+        setResults(list.slice(0, 10).map(apiListItemToBook))
+      } else {
+        // offline fallback: filter the bundled demo catalog
+        const q = keyword.toLowerCase()
+        setResults(
+          BOOKS.filter(
+            (b) =>
+              b.translatedTitle.toLowerCase().includes(q) ||
+              b.author.toLowerCase().includes(q) ||
+              (b.originalTitle ?? '').includes(keyword),
+          ).slice(0, 10),
+        )
+      }
+    } catch {
+      setResults([])
+    } finally {
+      setSearching(false)
+    }
+  }
+
+  const closeResults = () => setResults(null)
+
   return (
     <div className="bg-white">
       <div className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-3.5 sm:gap-8">
-        <a href="#top" title="Tory" className="group flex shrink-0 items-center gap-1.5">
+        <a href="#top" title="tory" className="group flex shrink-0 items-center gap-1.5">
           <img
             src={`${import.meta.env.BASE_URL}tori.png`}
             alt="Tori the mascot"
             className="h-10 w-10 animate-tori-bob group-hover:animate-tori-jump"
           />
           <span className="text-2xl font-extrabold tracking-tight text-gray-900">
-            Tory
+            tory
           </span>
         </a>
 
         {/* search bar */}
-        <div className="flex h-10 flex-1 items-center overflow-hidden rounded-full border-2 border-dancheong bg-white pl-4 pr-1">
-          <input
-            className="min-w-0 flex-1 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none"
-            placeholder="Search titles, authors, or the K-drama you just binged"
-          />
-          <button className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-dancheong transition hover:bg-red-50">
-            <Search className="h-4 w-4" strokeWidth={2.4} />
-          </button>
+        <div className="relative min-w-0 flex-1">
+          <div className="flex h-10 items-center overflow-hidden rounded-full border-2 border-dancheong bg-white pl-4 pr-1">
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && runSearch()}
+              className="min-w-0 flex-1 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none"
+              placeholder="Search titles, authors, or the K-drama you just binged"
+            />
+            <button
+              onClick={runSearch}
+              aria-label="Search"
+              className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-dancheong transition hover:bg-[#e8fbf6]"
+            >
+              {searching ? (
+                <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2.4} />
+              ) : (
+                <Search className="h-4 w-4" strokeWidth={2.4} />
+              )}
+            </button>
+          </div>
+
+          {/* results dropdown */}
+          {results !== null && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={closeResults} />
+              <div className="absolute left-0 right-0 top-11 z-50 max-h-96 overflow-y-auto rounded-2xl border border-gray-200 bg-white py-1.5 shadow-xl">
+                {results.length === 0 ? (
+                  <p className="px-4 py-6 text-center text-sm text-gray-400">
+                    No books found for “{query.trim()}”.
+                  </p>
+                ) : (
+                  results.map((book) => (
+                    <button
+                      key={book.id}
+                      onClick={() => {
+                        closeResults()
+                        onOpenBook(book)
+                      }}
+                      className="flex w-full items-center gap-3 px-4 py-2 text-left transition hover:bg-gray-50"
+                    >
+                      <BookCover book={book} className="h-14 w-10 shrink-0 !rounded-md" />
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[13px] font-medium text-[#1d1d1f]">
+                          {book.translatedTitle}
+                        </span>
+                        <span className="block truncate text-[11px] text-gray-500">
+                          {book.author} · {book.genre}
+                        </span>
+                      </span>
+                      <ChevronRight className="h-4 w-4 shrink-0 text-gray-300" />
+                    </button>
+                  ))
+                )}
+              </div>
+            </>
+          )}
         </div>
 
         {/* utility icons */}
@@ -452,7 +574,6 @@ const NAV_ITEMS = [
   { label: 'Live', href: '#live' },
   { label: 'Quick Reads', href: '#quickreads', hot: true },
   { label: 'Community', href: '#community' },
-  { label: 'Membership', href: '#membership' },
 ]
 
 function CategoryNav() {
@@ -486,35 +607,25 @@ function CategoryNav() {
 
 const BANNERS = [
   {
-    id: 'trial',
-    eyebrow: 'MEMBERSHIP',
-    title: 'Your first 30 days are on us',
-    sub: '2,210+ Korean works in 44 languages. Unlimited. Cancel anytime.',
-    cta: 'Start Free Trial',
-    href: '#membership',
-    bg: 'bg-[#173f35]',
-    accent: 'text-emerald-200',
+    id: 'banner-modern-bestseller',
+    eyebrow: 'FEATURED BESTSELLER',
+    title: MODERN_BESTSELLERS[0]?.translatedTitle ?? 'Bestseller',
+    sub: [MODERN_BESTSELLERS[0]?.author, MODERN_BESTSELLERS[0]?.genre].filter(Boolean).join(' · '),
+    cta: 'Open Preview',
+    href: '#bestsellers',
+    bg: 'bg-white',
+    accent: 'text-black/45',
   },
-  {
-    id: 'hankang',
-    eyebrow: 'COLLECTION',
-    title: 'Han Kang: the Nobel laureate, complete',
-    sub: 'The Vegetarian, Human Acts, and every translated edition in one shelf.',
-    cta: 'View Collection',
-    href: '#curation',
-    bg: 'bg-[#3b2e4a]',
-    accent: 'text-purple-200',
-  },
-  {
-    id: 'live',
-    eyebrow: 'LIVE · JUL 19',
-    title: 'Anton Hur on translating Cursed Bunny',
-    sub: 'Ask the International Booker–shortlisted translator anything.',
-    cta: 'Reserve a Seat',
-    href: '#live',
-    bg: 'bg-[#5a2e2a]',
-    accent: 'text-orange-200',
-  },
+  ...BOOKS.slice(0, 2).map((book, index) => ({
+    id: `banner-${book.id}`,
+    eyebrow: index === 0 ? 'ARCHIVE HIGHLIGHT' : 'READ NOW',
+    title: book.translatedTitle,
+    sub: `${book.author} · ${book.genre}`,
+    cta: 'Open Preview',
+    href: '#library',
+    bg: 'bg-white',
+    accent: 'text-black/45',
+  })),
 ]
 
 function BannerCarousel() {
@@ -530,38 +641,43 @@ function BannerCarousel() {
   const banner = BANNERS[index]
 
   return (
-    <section id="top" className="mx-auto max-w-6xl px-4 pt-4">
+    <section id="top" className="mx-auto max-w-6xl px-4 pt-6">
       <div
-        className={`relative overflow-hidden rounded-xl ${banner.bg} text-white transition-colors duration-500`}
+        className={`relative overflow-hidden rounded-[2rem] border border-black/5 bg-white text-[#1d1d1f] shadow-[0_20px_60px_rgba(0,0,0,0.06)] transition-colors duration-500`}
       >
-        <div className="flex items-center justify-between px-6 py-8 sm:px-10 sm:py-10">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(0,0,0,0.04),transparent_32%),radial-gradient(circle_at_left,rgba(0,0,0,0.03),transparent_28%)]" />
+        <div className="relative flex items-center justify-between px-6 py-8 sm:px-10 sm:py-10">
           <div className="max-w-xl">
-            <p className={`text-[11px] font-bold tracking-[0.2em] ${banner.accent}`}>
+            <p className={`text-[11px] font-semibold tracking-[0.22em] text-black/45`}>
               {banner.eyebrow}
             </p>
-            <h2 className="mt-2 text-xl font-bold leading-snug sm:text-2xl">
+            <h2 className="mt-2 text-3xl font-semibold tracking-tight leading-tight sm:text-4xl">
               {banner.title}
             </h2>
-            <p className="mt-2 text-[13px] leading-relaxed text-white/70 sm:text-sm">
+            <p className="mt-3 max-w-lg text-[15px] leading-relaxed text-black/60 sm:text-base">
               {banner.sub}
             </p>
             <a
               href={banner.href}
-              className="mt-4 inline-block rounded-full bg-white px-4 py-2 text-xs font-bold text-gray-900 transition hover:bg-white/90"
+              className="mt-5 inline-flex rounded-full bg-[#1d1d1f] px-5 py-2.5 text-sm font-medium text-white transition hover:bg-black"
             >
               {banner.cta}
             </a>
           </div>
           {/* decorative book stack */}
           <div className="hidden shrink-0 -rotate-3 gap-2 pr-2 md:flex">
-            {BOOKS.slice(index * 3, index * 3 + 3).map((b) => (
-              <BookCover key={b.id} book={b} className="h-36 w-24 shadow-lg" />
+            {BANNER_SHOWCASE.map((b) => (
+              <BookCover
+                key={b.id}
+                book={b}
+                className="h-36 w-24 shadow-[0_14px_40px_rgba(0,0,0,0.12)]"
+              />
             ))}
           </div>
         </div>
 
         {/* controls */}
-        <div className="absolute bottom-3 right-4 flex items-center gap-2">
+        <div className="absolute bottom-4 right-5 flex items-center gap-2">
           <div className="flex gap-1.5">
             {BANNERS.map((b, i) => (
               <button
@@ -569,16 +685,16 @@ function BannerCarousel() {
                 onClick={() => setIndex(i)}
                 aria-label={`Slide ${i + 1}`}
                 className={`h-1.5 rounded-full transition-all ${
-                  i === index ? 'w-5 bg-white' : 'w-1.5 bg-white/40'
+                  i === index ? 'w-5 bg-black/70' : 'w-1.5 bg-black/20'
                 }`}
               />
             ))}
           </div>
-          <span className="ml-1 flex overflow-hidden rounded-full bg-black/25">
-            <button onClick={prev} className="p-1 hover:bg-black/20" aria-label="Previous">
+          <span className="ml-1 flex overflow-hidden rounded-full border border-black/10 bg-white/80 shadow-sm backdrop-blur">
+            <button onClick={prev} className="p-1 text-black/60 hover:bg-black/5" aria-label="Previous">
               <ChevronLeft className="h-3.5 w-3.5" />
             </button>
-            <button onClick={next} className="p-1 hover:bg-black/20" aria-label="Next">
+            <button onClick={next} className="p-1 text-black/60 hover:bg-black/5" aria-label="Next">
               <ChevronRight className="h-3.5 w-3.5" />
             </button>
           </span>
@@ -596,22 +712,21 @@ function BestsellerSection({ onOpen }: { onOpen: (b: Book) => void }) {
   const [genre, setGenre] = useState<string>('All')
 
   const ranked = useMemo(() => {
-    const pool = genre === 'All' ? BOOKS : BOOKS.filter((b) => b.genre === genre)
-    // deterministic demo ordering standing in for weekly sales rank
-    return [...pool].sort((a, b) => ((a.id * 31) % 17) - ((b.id * 31) % 17)).slice(0, 8)
+    const pool = genre === 'All' ? MODERN_BESTSELLERS : MODERN_BESTSELLERS.filter((b) => b.genre === genre)
+    return [...pool].slice(0, 8)
   }, [genre])
 
   return (
     <section id="bestsellers" className="mx-auto max-w-6xl px-4 pt-10">
       <SectionHeader
-        title="This Week's Bestsellers"
-        subtitle="Most-read translations this week, updated daily"
+        title="Bestsellers"
+        subtitle="Han Kang, Cho Nam-joo, Bora Chung, and other contemporary standouts"
         action="View full ranking"
       />
 
       {/* genre tabs */}
       <div className="no-scrollbar mb-3 flex gap-1.5 overflow-x-auto border-b border-gray-100 pb-3">
-        {GENRES.map((g) => (
+        {BESTSELLER_GENRES.map((g) => (
           <button
             key={g}
             onClick={() => setGenre(g)}
@@ -636,7 +751,7 @@ function BestsellerSection({ onOpen }: { onOpen: (b: Book) => void }) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  Section: For You — K-content taste → book feed
+//  Section: For You — reading moods → book feed
 // ═══════════════════════════════════════════════════════════════
 
 /** Score a book against the selected taste tags (demo heuristic) */
@@ -646,14 +761,53 @@ function scoreBook(book: Book, activeTags: Set<string>): number {
   return Math.min(99, 68 + overlap * 11 + ((book.id * 7) % 6))
 }
 
-function ForYouSection({ onOpen }: { onOpen: (b: Book) => void }) {
+function ForYouSection({
+  onOpen,
+  apiOnline,
+  userId,
+}: {
+  onOpen: (b: Book) => void
+  apiOnline: boolean
+  userId: number | null
+}) {
   const [selected, setSelected] = useState<string[]>(['squid-game'])
+  const [feed, setFeed] = useState<{ book: Book; score: number }[] | null>(null)
+  const [loading, setLoading] = useState(false)
 
   const toggle = (id: string) =>
     setSelected((prev) =>
       prev.includes(id) ? prev.filter((t) => t !== id) : [...prev, id],
     )
 
+  // live recommendation feed from the backend (when reachable)
+  const loadFeed = useCallback(
+    async (refresh = false) => {
+      if (!userId) return
+      setLoading(true)
+      try {
+        const data = refresh
+          ? await refreshRecommendationFeed(userId, 12)
+          : await fetchRecommendationFeed(userId, 12)
+        setFeed(
+          data.items.map((item) => ({
+            book: apiRecItemToBook(item),
+            score: Math.min(99, Math.max(1, Math.round(item.score))),
+          })),
+        )
+      } catch {
+        setFeed(null)
+      } finally {
+        setLoading(false)
+      }
+    },
+    [userId],
+  )
+
+  useEffect(() => {
+    if (apiOnline && userId) loadFeed()
+  }, [apiOnline, userId, loadFeed])
+
+  // offline fallback: taste-chip demo scoring over the bundled catalog
   const recommended = useMemo(() => {
     const activeTags = new Set(
       TASTES.filter((t) => selected.includes(t.id)).flatMap((t) => t.tags),
@@ -664,43 +818,70 @@ function ForYouSection({ onOpen }: { onOpen: (b: Book) => void }) {
       .slice(0, 8)
   }, [selected])
 
+  const liveMode = apiOnline && feed !== null
+  const items = liveMode ? feed : recommended
+
   return (
     <section id="foryou" className="mt-10 bg-gray-50 py-10">
       <div className="mx-auto max-w-6xl px-4">
-        <SectionHeader
-          title="Picked For You"
-          subtitle="Tap the K-content you already love — we map it to the books behind it"
-        />
-
-        <div className="mb-5 flex flex-wrap gap-1.5">
-          {TASTES.map((taste) => {
-            const active = selected.includes(taste.id)
-            return (
-              <button
-                key={taste.id}
-                onClick={() => toggle(taste.id)}
-                className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[13px] font-medium transition ${
-                  active
-                    ? 'border-dancheong bg-red-50 text-dancheong'
-                    : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
-                }`}
-              >
-                {active && <Check className="h-3 w-3" />}
-                {taste.label}
-              </button>
-            )
-          })}
+        <div className="flex items-start justify-between">
+          <SectionHeader
+            title="Picked For You"
+            subtitle={
+              liveMode
+                ? 'Ranked live by the tory recommendation engine — reading anything reshapes this feed'
+                : 'Choose a reading mood and the archive reshapes itself around it'
+            }
+          />
+          {apiOnline && userId && (
+            <button
+              onClick={() => loadFeed(true)}
+              disabled={loading}
+              className="flex shrink-0 items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:border-gray-300 disabled:opacity-50"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
+              Refresh
+            </button>
+          )}
         </div>
 
-        {recommended.length > 0 ? (
+        {!liveMode && (
+          <div className="mb-5 flex flex-wrap gap-1.5">
+            {TASTES.map((taste) => {
+              const active = selected.includes(taste.id)
+              return (
+                <button
+                  key={taste.id}
+                  onClick={() => toggle(taste.id)}
+                  className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[13px] font-medium transition ${
+                    active
+                      ? 'border-dancheong bg-[#e8fbf6] text-dancheong'
+                      : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                  }`}
+                >
+                  {active && <Check className="h-3 w-3" />}
+                  {taste.label}
+                </button>
+              )
+            })}
+          </div>
+        )}
+
+        {items.length > 0 ? (
           <div className="no-scrollbar -mx-4 flex gap-4 overflow-x-auto px-4 pb-1">
-            {recommended.map(({ book, score }) => (
+            {items.map(({ book, score }) => (
               <BookItem key={book.id} book={book} onOpen={onOpen} matchScore={score} />
             ))}
           </div>
+        ) : loading ? (
+          <p className="flex items-center justify-center gap-2 rounded border border-dashed border-gray-200 bg-white py-12 text-center text-sm text-gray-400">
+            <Loader2 className="h-4 w-4 animate-spin" /> Building your feed…
+          </p>
         ) : (
           <p className="rounded border border-dashed border-gray-200 bg-white py-12 text-center text-sm text-gray-400">
-            Pick at least one taste above and we'll build your feed.
+            {liveMode
+              ? 'Open a few books and your personal feed will appear here.'
+              : "Pick at least one taste above and we'll build your feed."}
           </p>
         )}
       </div>
@@ -737,7 +918,7 @@ function CurationSection({ onOpen }: { onOpen: (b: Book) => void }) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  Section: Quick Reads — re-processed 5–10 min content
+//  Section: Quick Reads — re-processed excerpts
 // ═══════════════════════════════════════════════════════════════
 
 const FORMAT_META = {
@@ -766,7 +947,7 @@ function QuickReadsSection({ onOpen }: { onOpen: (b: Book) => void }) {
       <div className="mx-auto max-w-6xl px-4">
         <SectionHeader
           title="Quick Reads"
-          subtitle="Every book re-processed into 5–10 minute pieces — episodes, recaps, audio, and visual stories"
+          subtitle="Selected books presented as short excerpts, audio notes, and visual summaries"
           action="Browse all"
         />
 
@@ -901,7 +1082,7 @@ function LiveSection() {
     <section id="live" className="mx-auto max-w-6xl px-4 pt-10">
       <SectionHeader
         title="Author & Translator Live"
-        subtitle="Finished the book? Ask the person who wrote it — or translated it"
+        subtitle="Meet the people behind the archive titles"
         action="All sessions"
       />
       <div className="grid gap-3 md:grid-cols-3">
@@ -957,7 +1138,7 @@ function CommunitySection({ onOpen }: { onOpen: (b: Book) => void }) {
     <section id="community" className="mx-auto max-w-6xl px-4 pt-10">
       <SectionHeader
         title="Community"
-        subtitle="Readers from 44 language regions, arguing about the same ending"
+        subtitle="Readers from around the world discussing the same titles"
         action="All discussions"
       />
 
@@ -1042,14 +1223,13 @@ function CommunitySection({ onOpen }: { onOpen: (b: Book) => void }) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  Side ad banners (fixed wings, wide screens only)
+//  Side ad banners (restored fixed wings)
 // ═══════════════════════════════════════════════════════════════
 
 const SIDE_ADS = [
   {
     id: 'left',
-    position: { left: 'calc(50% - 768px)' },
-    bg: 'bg-[#173f35]',
+    position: { left: '1rem', top: '10rem' },
     eyebrow: 'PARTNER',
     lines: ['2026 Korean', 'Literature', 'Translation', 'Awards'],
     sub: 'Hosted by LTI Korea — submissions open now',
@@ -1057,16 +1237,28 @@ const SIDE_ADS = [
     href: '#curation',
   },
   {
+    id: 'left-netflix',
+    position: { left: '1rem', top: '29.5rem' },
+    eyebrow: 'NETFLIX',
+    lines: ['82년생 김지영', 'Now Streaming', 'Tonight'],
+    sub: 'Watch Kim Jiyoung, Born 1982 on your next screen.',
+    cta: 'Stream Now',
+    href: '#bestsellers',
+  },
+  {
     id: 'right',
-    position: { right: 'calc(50% - 768px)' },
-    bg: 'bg-dancheong',
+    position: { right: '1rem', top: '10rem' },
     eyebrow: 'MEMBERSHIP',
     lines: ['First', '30 Days', '$0'],
     sub: 'Unlimited access to 2,210+ translated works',
     cta: 'Start Free Trial',
-    href: '#membership',
+    href: '#bestsellers',
   },
 ]
+
+const BANNER_SHOWCASE = [MODERN_BESTSELLERS[0], BOOKS[0], BOOKS[1]].filter(
+  (book): book is Book => Boolean(book),
+)
 
 function SideAds() {
   const [closed, setClosed] = useState<string[]>([])
@@ -1074,45 +1266,80 @@ function SideAds() {
   return (
     <>
       {SIDE_ADS.filter((ad) => !closed.includes(ad.id)).map((ad) => (
-        <aside
-          key={ad.id}
-          style={ad.position}
-          className="fixed top-36 z-30 hidden w-40 min-[1580px]:block"
-        >
-          <div className={`relative overflow-hidden rounded-lg ${ad.bg} text-white shadow-md`}>
+        <aside key={ad.id} style={ad.position} className="fixed z-30 w-40">
+          <div
+            className={`relative overflow-hidden rounded-[1.5rem] border shadow-[0_12px_35px_rgba(0,0,0,0.08)] ${
+              ad.id === 'left-netflix'
+                ? 'border-[#2a0000] bg-[#0a0a0a] text-white'
+                : 'border-black/5 bg-white text-[#1d1d1f]'
+            }`}
+          >
             <div className="flex items-center justify-between px-3 pt-2.5">
-              <span className="rounded-sm bg-black/25 px-1 py-px text-[9px] font-bold tracking-wider text-white/70">
+              <span
+                className={`rounded-full px-1.5 py-0.5 text-[9px] font-medium tracking-wider ${
+                  ad.id === 'left-netflix'
+                    ? 'bg-[#e50914] text-white'
+                    : 'bg-black/5 text-black/45'
+                }`}
+              >
                 AD
               </span>
               <button
                 onClick={() => setClosed((c) => [...c, ad.id])}
                 aria-label="Close ad"
-                className="rounded p-0.5 text-white/50 hover:bg-black/20 hover:text-white"
+                className={`rounded p-0.5 ${
+                  ad.id === 'left-netflix'
+                    ? 'text-white/45 hover:bg-white/10 hover:text-white'
+                    : 'text-black/35 hover:bg-black/5 hover:text-black/55'
+                }`}
               >
                 <X className="h-3 w-3" />
               </button>
             </div>
             <div className="px-3.5 pb-4 pt-3">
-              <p className="text-[9px] font-bold tracking-[0.2em] text-white/60">
+              <p
+                className={`text-[9px] font-semibold tracking-[0.2em] ${
+                  ad.id === 'left-netflix' ? 'text-[#e50914]' : 'text-black/38'
+                }`}
+              >
                 {ad.eyebrow}
               </p>
-              <p className="mt-1.5 text-lg font-extrabold leading-tight">
+              <p
+                className={`mt-1.5 text-lg font-semibold leading-tight tracking-tight ${
+                  ad.id === 'left-netflix' ? 'text-white' : 'text-[#1d1d1f]'
+                }`}
+              >
                 {ad.lines.map((line) => (
                   <span key={line} className="block">
                     {line}
                   </span>
                 ))}
               </p>
-              <p className="mt-2.5 text-[10px] leading-relaxed text-white/70">
+              <p
+                className={`mt-2.5 text-[11px] leading-relaxed ${
+                  ad.id === 'left-netflix' ? 'text-white/65' : 'text-black/45'
+                }`}
+              >
                 {ad.sub}
               </p>
               <a
                 href={ad.href}
-                className="mt-3 block rounded-full bg-white py-1.5 text-center text-[10px] font-bold text-gray-900 transition hover:bg-white/90"
+                className={`mt-3 block rounded-full py-1.5 text-center text-[10px] font-medium transition ${
+                  ad.id === 'left-netflix'
+                    ? 'bg-[#e50914] text-white hover:bg-[#f40612]'
+                    : 'bg-[#1d1d1f] text-white hover:bg-black'
+                }`}
               >
                 {ad.cta}
               </a>
             </div>
+            {ad.id === 'right' && (
+              <img
+                src={`${import.meta.env.BASE_URL}tori.png`}
+                alt="tory character"
+                className="pointer-events-none absolute right-2 top-2 h-14 w-14 rotate-12 rounded-full bg-white p-0.5 shadow-[0_8px_22px_rgba(0,0,0,0.12)]"
+              />
+            )}
           </div>
         </aside>
       ))}
@@ -1121,79 +1348,11 @@ function SideAds() {
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  Section: Membership (subscription plans)
-// ═══════════════════════════════════════════════════════════════
-
-function MembershipSection() {
-  return (
-    <section id="membership" className="mt-12 border-t border-gray-100 bg-gray-50 py-12">
-      <div className="mx-auto max-w-6xl px-4">
-        <div className="mb-8 text-center">
-          <h2 className="text-xl font-bold text-gray-900 sm:text-2xl">
-            Tory Membership
-          </h2>
-          <p className="mt-1 text-sm text-gray-500">
-            One subscription, every translation. First month free.
-          </p>
-        </div>
-
-        <div className="mx-auto grid max-w-3xl gap-4 md:grid-cols-2">
-          {PLANS.map((plan) => (
-            <div
-              key={plan.id}
-              className={`relative flex flex-col rounded-xl border bg-white p-6 ${
-                plan.highlighted ? 'border-dancheong shadow-sm' : 'border-gray-200'
-              }`}
-            >
-              {plan.highlighted && (
-                <span className="absolute -top-2.5 left-6 rounded-full bg-dancheong px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
-                  Most Popular
-                </span>
-              )}
-              <h3 className="text-base font-bold text-gray-900">{plan.name}</h3>
-              <p className="mt-0.5 text-xs text-gray-500">{plan.tagline}</p>
-              <p className="mt-4">
-                <span className="text-3xl font-extrabold text-gray-900">
-                  {plan.price}
-                </span>
-                <span className="ml-1.5 text-xs text-gray-400">{plan.period}</span>
-              </p>
-              <ul className="mt-4 flex-1 space-y-2">
-                {plan.features.map((feature) => (
-                  <li key={feature} className="flex items-start gap-2 text-[13px] text-gray-600">
-                    <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-dancheong" />
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-              <button
-                className={`mt-6 rounded-lg py-2.5 text-sm font-bold transition ${
-                  plan.highlighted
-                    ? 'bg-dancheong text-white hover:bg-dancheong/90'
-                    : 'border border-gray-300 text-gray-700 hover:border-gray-900'
-                }`}
-              >
-                {plan.cta}
-              </button>
-            </div>
-          ))}
-        </div>
-
-        <p className="mt-5 text-center text-[11px] text-gray-400">
-          Cancel anytime. Your reading history, Quick Reads progress, and For-You feed stay with
-          your account.
-        </p>
-      </div>
-    </section>
-  )
-}
-
-// ═══════════════════════════════════════════════════════════════
 //  Footer (corporate storefront style)
 // ═══════════════════════════════════════════════════════════════
 
 const FOOTER_LINKS = [
-  'About Tory',
+  'About tory',
   'Terms of Service',
   'Privacy Policy',
   'Youth Protection',
@@ -1224,7 +1383,7 @@ function Footer() {
 
         <div className="mt-5 space-y-1 text-[11px] leading-relaxed text-gray-400">
           <p>
-            Tory Inc. · CEO Team Yaho · 123 Teheran-ro, Gangnam-gu, Seoul, Korea ·
+            tory Inc. · CEO Team Yaho · 123 Teheran-ro, Gangnam-gu, Seoul, Korea ·
             Business License 123-45-67890
           </p>
           <p>
@@ -1232,7 +1391,7 @@ function Footer() {
             data adapted from LTI Korea translation grant statistics (late 2024)
           </p>
           <p className="pt-1 text-gray-300">
-            © 2026 Tory. Hackathon demo — all titles shown for demonstration
+            © 2026 tory. Hackathon demo — all titles shown for demonstration
             purposes.
           </p>
         </div>
@@ -1247,22 +1406,73 @@ function Footer() {
 
 export default function App() {
   const [selected, setSelected] = useState<Book | null>(null)
+  const [apiOnline, setApiOnline] = useState<boolean | null>(null)
+  const [userId, setUserId] = useState<number | null>(null)
+
+  // Probe the backend once on mount; register/restore the demo user if up.
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      const online = await checkBackend()
+      if (cancelled) return
+      setApiOnline(online)
+      if (online) {
+        try {
+          const id = await ensureUser()
+          if (!cancelled) setUserId(id)
+        } catch {
+          if (!cancelled) setUserId(null)
+        }
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  /** Open a book; API books get detail hydration + a VIEW interaction log */
+  const openBook = useCallback(
+    (book: Book) => {
+      setSelected(book)
+      if (book.fromApi && userId) {
+        logInteraction(userId, {
+          bookId: book.id,
+          interactionType: 'VIEW',
+          viewDurationSeconds: 5,
+          sourceScreen: 'book-preview',
+        })
+        fetchBookDetail(book.id)
+          .then((detail) =>
+            setSelected((cur) =>
+              cur && cur.id === book.id && cur.fromApi
+                ? { ...apiDetailToBook(detail), kContentTags: cur.kContentTags }
+                : cur,
+            ),
+          )
+          .catch(() => {})
+      }
+    },
+    [userId],
+  )
 
   return (
-    <div className="min-h-screen bg-white font-sans text-gray-900">
-      <UtilityBar />
-      <MainHeader />
+    <div className="min-h-screen bg-[#f5f5f7] font-sans text-[#1d1d1f]">
+      <UtilityBar apiOnline={apiOnline} />
+      <MainHeader apiOnline={apiOnline === true} onOpenBook={openBook} />
       <CategoryNav />
       <main className="pb-14">
         <BannerCarousel />
-        <BestsellerSection onOpen={setSelected} />
-        <ForYouSection onOpen={setSelected} />
-        <CurationSection onOpen={setSelected} />
-        <QuickReadsSection onOpen={setSelected} />
-        <LibrarySection onOpen={setSelected} />
+        <BestsellerSection onOpen={openBook} />
+        <ForYouSection
+          onOpen={openBook}
+          apiOnline={apiOnline === true}
+          userId={userId}
+        />
+        <CurationSection onOpen={openBook} />
+        <QuickReadsSection onOpen={openBook} />
+        <LibrarySection onOpen={openBook} />
         <LiveSection />
-        <CommunitySection onOpen={setSelected} />
-        <MembershipSection />
+        <CommunitySection onOpen={openBook} />
       </main>
       <Footer />
       <SideAds />

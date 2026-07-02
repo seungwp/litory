@@ -4,6 +4,9 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "generate:books": "node scripts/generate-md-books.mjs",
+    "predev": "npm run generate:books",
+    "prebuild": "npm run generate:books",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview"
