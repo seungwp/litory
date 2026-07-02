@@ -1431,10 +1431,10 @@ const SIDE_ADS = [
   {
     id: 'right',
     position: { right: '1rem', top: '10rem' },
-    eyebrow: 'MEMBERSHIP',
-    lines: ['First', '30 Days', '$0'],
-    sub: 'Unlimited access to 2,210+ translated works',
-    cta: 'Start Free Trial',
+    eyebrow: 'PUBLISHER PARTNER',
+    lines: ['문학동네', 'Munhakdongne', "Korea's #1", 'Literary Publisher'],
+    sub: 'Home of Korea’s most-loved novels — now streaming on Litory.',
+    cta: 'Explore Titles',
     href: '#bestsellers',
   },
 ]

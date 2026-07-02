@@ -17,6 +17,22 @@ export const BOOKS: Book[] = [...RAW_BOOKS].sort((a, b) => a.id - b.id)
 export const BESTSELLER_IDS = [2045, 2176, 2047, 1983, 1984, 1985, 1987, 1990]
 
 export const MODERN_BESTSELLERS: Book[] = [
+  // #1 bestseller — array order defines the ranking
+  {
+    id: 9004,
+    originalTitle: '82년생 김지영',
+    translatedTitle: 'Kim Jiyoung, Born 1982',
+    author: 'Cho Nam-joo',
+    genre: 'Feminist Realism',
+    translatedLanguages: ['EN', 'FR', 'ES', 'JA', 'ZH', 'VI'],
+    isOutOfPrint: false,
+    year: 2016,
+    coverColor: '#c9452f',
+    episodeMinutes: 7,
+    kContentTags: ['social', 'award', 'k-drama'],
+    description:
+      'A modern cornerstone of Korean feminist fiction, tracking one ordinary life through a whole social structure.',
+  },
   {
     id: 9001,
     originalTitle: '채식주의자',
@@ -61,21 +77,6 @@ export const MODERN_BESTSELLERS: Book[] = [
     kContentTags: ['history', 'award', 'literary'],
     description:
       'A haunting novel that follows grief, memory, and the shape of historical loss across generations.',
-  },
-  {
-    id: 9004,
-    originalTitle: '82년생 김지영',
-    translatedTitle: 'Kim Jiyoung, Born 1982',
-    author: 'Cho Nam-joo',
-    genre: 'Feminist Realism',
-    translatedLanguages: ['EN', 'FR', 'ES', 'JA', 'ZH', 'VI'],
-    isOutOfPrint: false,
-    year: 2016,
-    coverColor: '#c9452f',
-    episodeMinutes: 7,
-    kContentTags: ['social', 'award', 'k-drama'],
-    description:
-      'A modern cornerstone of Korean feminist fiction, tracking one ordinary life through a whole social structure.',
   },
   {
     id: 9005,
