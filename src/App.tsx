@@ -225,23 +225,132 @@ function SectionHeader({
 //  e-Book viewer preview modal
 // ═══════════════════════════════════════════════════════════════
 
+/** One rendered block of reader text */
+interface ReaderPara {
+  text: string
+  heading: boolean
+}
+
+/** Strip md metadata/markup and split the raw file into paragraphs */
+function mdToParagraphs(raw: string): ReaderPara[] {
+  const paras: ReaderPara[] = []
+  let buf: string[] = []
+  const flush = () => {
+    if (buf.length) {
+      paras.push({ text: buf.join(' '), heading: false })
+      buf = []
+    }
+  }
+  for (const rawLine of raw.split(/\r?\n/)) {
+    const line = rawLine.trim()
+    if (!line || /^-{3,}$/.test(line)) {
+      flush()
+      continue
+    }
+    // metadata lines like "**저자:** …" from the md header
+    if (/^\*\*(저자|출처|책\s*ID|장르|책 장르)\s*:?\*\*/.test(line)) continue
+    if (/^#{1,6}\s/.test(line)) {
+      flush()
+      paras.push({ text: line.replace(/^#{1,6}\s+/, ''), heading: true })
+      continue
+    }
+    buf.push(line.replace(/\*\*/g, ''))
+  }
+  flush()
+  return paras
+}
+
+/** Pack paragraphs into pages under a character budget */
+function paginate(paras: ReaderPara[], charsPerPage: number): ReaderPara[][] {
+  const pages: ReaderPara[][] = []
+  let current: ReaderPara[] = []
+  let used = 0
+  const push = (p: ReaderPara) => {
+    if (used > 0 && used + p.text.length > charsPerPage) {
+      pages.push(current)
+      current = []
+      used = 0
+    }
+    current.push(p)
+    used += p.text.length
+  }
+  for (const p of paras) {
+    if (p.text.length <= charsPerPage || p.heading) {
+      push(p)
+      continue
+    }
+    // oversized paragraph: split on sentence boundaries
+    let chunk = ''
+    for (const sentence of p.text.match(/[^.!?]+[.!?]*\s*/g) ?? [p.text]) {
+      if (chunk && chunk.length + sentence.length > charsPerPage) {
+        push({ text: chunk.trim(), heading: false })
+        chunk = ''
+      }
+      chunk += sentence
+    }
+    if (chunk.trim()) push({ text: chunk.trim(), heading: false })
+  }
+  if (current.length) pages.push(current)
+  return pages.length ? pages : [[{ text: '', heading: false }]]
+}
+
 function ViewerModal({ book, onClose }: { book: Book; onClose: () => void }) {
   const [serif, setSerif] = useState(true)
   const [large, setLarge] = useState(false)
+  const [fullText, setFullText] = useState<string | null>(null)
+  const [loadingText, setLoadingText] = useState(false)
+  const [page, setPage] = useState(0)
+
+  // load the full md text for archive books that ship one
+  useEffect(() => {
+    setFullText(null)
+    setPage(0)
+    if (!book.bookId) return
+    let cancelled = false
+    setLoadingText(true)
+    fetch(`${import.meta.env.BASE_URL}books/${book.bookId}.md`)
+      .then((res) => (res.ok ? res.text() : null))
+      .then((text) => {
+        if (!cancelled && text) setFullText(text)
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setLoadingText(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [book.id, book.bookId])
+
+  const fallback =
+    book.excerpt ??
+    `${book.description}\n\n— This preview is demo text reconstructed from the opening of “${book.translatedTitle}”. In the full service, the complete translation streams from the tory cloud library.`
+
+  const pages = useMemo(
+    () => paginate(mdToParagraphs(fullText ?? fallback), large ? 1100 : 1600),
+    [fullText, fallback, large],
+  )
+  const lastPage = pages.length - 1
+  const clampedPage = Math.min(page, lastPage)
+  const goPrev = useCallback(() => setPage((p) => Math.max(0, p - 1)), [])
+  const goNext = useCallback(
+    () => setPage((p) => Math.min(lastPage, p + 1)),
+    [lastPage],
+  )
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+      if (e.key === 'ArrowLeft') goPrev()
+      if (e.key === 'ArrowRight') goNext()
+    }
     window.addEventListener('keydown', onKey)
     document.body.style.overflow = 'hidden'
     return () => {
       window.removeEventListener('keydown', onKey)
       document.body.style.overflow = ''
     }
-  }, [onClose])
-
-  const body =
-    book.excerpt ??
-    `${book.description}\n\n— This preview is demo text reconstructed from the opening of “${book.translatedTitle}”. In the full service, the complete translation streams from the tory cloud library.`
+  }, [onClose, goPrev, goNext])
 
   return (
     <div
@@ -335,36 +444,95 @@ function ViewerModal({ book, onClose }: { book: Book; onClose: () => void }) {
             </div>
           </div>
 
-          <div className="viewer-scroll flex-1 overflow-y-auto bg-[#fbfaf7] px-6 py-8 sm:px-14 sm:py-12">
+          <div
+            key={clampedPage}
+            className="viewer-scroll flex-1 overflow-y-auto bg-[#fbfaf7] px-6 py-8 sm:px-14 sm:py-12"
+          >
             <div className="mx-auto max-w-prose">
-              <p className="mb-6 text-center text-xs uppercase tracking-[0.3em] text-gray-400">
-                {book.author} — {book.translatedTitle}
-              </p>
-              <h3
-                className={`mb-6 text-center font-serif font-bold text-gray-900 ${
-                  large ? 'text-3xl' : 'text-2xl'
-                }`}
-              >
-                {book.translatedTitle}
-              </h3>
-              <div
-                className={`space-y-5 leading-loose text-gray-800 ${
-                  serif ? 'font-serif' : 'font-sans'
-                } ${large ? 'text-[19px]' : 'text-[16px]'}`}
-              >
-                {body.split('\n\n').map((para, i) => (
-                  <p key={i}>{para}</p>
-                ))}
-              </div>
+              {clampedPage === 0 && (
+                <>
+                  <p className="mb-6 text-center text-xs uppercase tracking-[0.3em] text-gray-400">
+                    {book.author} — {book.translatedTitle}
+                  </p>
+                  <h3
+                    className={`mb-6 text-center font-serif font-bold text-gray-900 ${
+                      large ? 'text-3xl' : 'text-2xl'
+                    }`}
+                  >
+                    {book.translatedTitle}
+                  </h3>
+                </>
+              )}
+              {loadingText ? (
+                <p className="flex items-center justify-center gap-2 py-16 text-sm text-gray-400">
+                  <Loader2 className="h-4 w-4 animate-spin" /> Loading the full
+                  text…
+                </p>
+              ) : (
+                <div
+                  className={`space-y-5 leading-loose text-gray-800 ${
+                    serif ? 'font-serif' : 'font-sans'
+                  } ${large ? 'text-[19px]' : 'text-[16px]'}`}
+                >
+                  {pages[clampedPage].map((para, i) =>
+                    para.heading ? (
+                      <h4
+                        key={i}
+                        className={`pt-2 text-center font-serif font-bold text-gray-900 ${
+                          large ? 'text-2xl' : 'text-xl'
+                        }`}
+                      >
+                        {para.text}
+                      </h4>
+                    ) : (
+                      <p key={i}>{para.text}</p>
+                    ),
+                  )}
+                </div>
+              )}
+
+              {/* end-of-book upsell */}
+              {!loadingText && clampedPage === lastPage && (
+                <div className="mt-10 rounded-xl border border-gray-200 bg-white p-5 text-center">
+                  <p className="text-sm font-bold text-gray-900">
+                    You reached the end of this preview
+                  </p>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Keep reading {book.translatedTitle} — and{' '}
+                    {BOOKS.length}+ more translated works — with tory.
+                  </p>
+                  <a
+                    href="#membership"
+                    onClick={onClose}
+                    className="mt-3 inline-block rounded-full bg-dancheong px-5 py-2 text-xs font-bold text-white transition hover:bg-dancheong/90"
+                  >
+                    Start 30 Days Free
+                  </a>
+                </div>
+              )}
             </div>
           </div>
 
           <div className="flex items-center justify-between border-t border-gray-200 px-4 py-2.5 text-xs text-gray-400">
-            <button className="flex items-center gap-1 rounded px-2 py-1 transition hover:bg-gray-100">
+            <button
+              onClick={goPrev}
+              disabled={clampedPage === 0}
+              className="flex items-center gap-1 rounded px-2 py-1 transition hover:bg-gray-100 disabled:cursor-default disabled:opacity-30 disabled:hover:bg-transparent"
+            >
               <ChevronLeft className="h-4 w-4" /> Prev
             </button>
-            <span>Episode 1 / 32 · Preview</span>
-            <button className="flex items-center gap-1 rounded px-2 py-1 transition hover:bg-gray-100">
+            <span>
+              Page {clampedPage + 1} / {pages.length}
+              {fullText ? ' · Full text' : ' · Preview'}
+              <span className="ml-2 hidden text-gray-300 sm:inline">
+                ← → keys work too
+              </span>
+            </span>
+            <button
+              onClick={goNext}
+              disabled={clampedPage === lastPage}
+              className="flex items-center gap-1 rounded px-2 py-1 transition hover:bg-gray-100 disabled:cursor-default disabled:opacity-30 disabled:hover:bg-transparent"
+            >
               Next <ChevronRight className="h-4 w-4" />
             </button>
           </div>
