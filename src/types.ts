@@ -74,10 +74,21 @@ export interface CommunityPost {
   author: string
   /** Flag emoji showing where the reader is from */
   country: string
-  tag: 'Discussion' | 'Book Club' | 'Question' | 'Challenge'
+  tag: 'Discussion' | 'Book Club' | 'Question'
   replies: number
   likes: number
   timeAgo: string
+}
+
+/** One piece of re-processed content derived from a book */
+export interface QuickRead {
+  id: number
+  bookId: number
+  format: 'Episode' | 'Audio' | 'Recap' | 'Visual'
+  title: string
+  minutes: number
+  /** Reading progress % — present when the demo user has started it */
+  progress?: number
 }
 
 /** Subscription plan card */

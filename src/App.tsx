@@ -13,8 +13,11 @@ import {
   Library,
   Star,
   Timer,
-  Medal,
   Radio,
+  Play,
+  Headphones,
+  Zap,
+  Image as ImageIcon,
   Users,
   Check,
   ChevronDown,
@@ -32,6 +35,7 @@ import {
   LANGUAGE_LABEL,
   LIVE_SESSIONS,
   PLANS,
+  QUICK_READS,
   TASTES,
 } from './data'
 
@@ -444,8 +448,8 @@ const NAV_ITEMS = [
   { label: 'Library', href: '#library' },
   { label: 'Curations', href: '#curation' },
   { label: 'Live', href: '#live' },
-  { label: 'Challenges', href: '#challenges' },
-  { label: 'Community', href: '#community', hot: true },
+  { label: 'Quick Reads', href: '#quickreads', hot: true },
+  { label: 'Community', href: '#community' },
   { label: 'Membership', href: '#membership' },
 ]
 
@@ -731,59 +735,107 @@ function CurationSection({ onOpen }: { onOpen: (b: Book) => void }) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  Event banner strip (3 small cards)
+//  Section: Quick Reads — re-processed 5–10 min content
 // ═══════════════════════════════════════════════════════════════
 
-const EVENTS = [
-  {
-    id: 'challenges',
-    icon: Medal,
-    title: '7 Days of Han Kang',
-    sub: 'Finish the challenge, earn the badge, share it to your feed',
-    bg: 'bg-amber-50',
-    iconColor: 'text-amber-600',
-    href: '#challenges',
-  },
-  {
-    id: 'episodes',
-    icon: Timer,
-    title: '5-minute episodes',
-    sub: 'Every novel re-edited into bite-sized daily reads',
-    bg: 'bg-emerald-50',
-    iconColor: 'text-emerald-600',
-    href: '#library',
-  },
-  {
-    id: 'archive',
-    icon: Archive,
-    title: 'Out-of-print rescue',
-    sub: 'Translations you can no longer buy, preserved forever',
-    bg: 'bg-red-50',
-    iconColor: 'text-dancheong',
-    href: '#library',
-  },
-]
+const FORMAT_META = {
+  Episode: { icon: Play, label: 'Episode', chip: 'bg-blue-50 text-blue-600' },
+  Audio: { icon: Headphones, label: 'Audio', chip: 'bg-purple-50 text-purple-600' },
+  Recap: { icon: Zap, label: 'Recap', chip: 'bg-amber-50 text-amber-700' },
+  Visual: { icon: ImageIcon, label: 'Visual Story', chip: 'bg-emerald-50 text-emerald-600' },
+} as const
 
-function EventStrip() {
+const FORMAT_FILTERS = ['All', 'Episode', 'Audio', 'Recap', 'Visual'] as const
+
+function QuickReadsSection({ onOpen }: { onOpen: (b: Book) => void }) {
+  const [format, setFormat] = useState<(typeof FORMAT_FILTERS)[number]>('All')
+  const byId = useMemo(() => new Map(BOOKS.map((b) => [b.id, b])), [])
+
+  const items = useMemo(
+    () =>
+      format === 'All'
+        ? QUICK_READS
+        : QUICK_READS.filter((q) => q.format === format),
+    [format],
+  )
+
   return (
-    <section id="challenges" className="mx-auto max-w-6xl px-4 pt-10">
-      <div className="grid gap-3 sm:grid-cols-3">
-        {EVENTS.map(({ id, icon: Icon, title, sub, bg, iconColor, href }) => (
-          <a
-            key={id}
-            href={href}
-            className={`flex items-center gap-3.5 rounded-lg ${bg} px-5 py-4 transition hover:brightness-[0.98]`}
-          >
-            <Icon className={`h-7 w-7 shrink-0 ${iconColor}`} strokeWidth={1.7} />
-            <div className="min-w-0">
-              <p className="text-sm font-bold text-gray-900">{title}</p>
-              <p className="mt-0.5 text-xs leading-snug text-gray-500 line-clamp-2">
-                {sub}
-              </p>
-            </div>
-            <ChevronRight className="ml-auto h-4 w-4 shrink-0 text-gray-400" />
-          </a>
-        ))}
+    <section id="quickreads" className="mt-10 bg-gray-50 py-10">
+      <div className="mx-auto max-w-6xl px-4">
+        <SectionHeader
+          title="Quick Reads"
+          subtitle="Every book re-processed into 5–10 minute pieces — episodes, recaps, audio, and visual stories"
+          action="Browse all"
+        />
+
+        {/* format filter chips */}
+        <div className="mb-5 flex flex-wrap gap-1.5">
+          {FORMAT_FILTERS.map((f) => (
+            <button
+              key={f}
+              onClick={() => setFormat(f)}
+              className={`rounded-full px-3.5 py-1.5 text-[13px] font-medium transition ${
+                format === f
+                  ? 'bg-gray-900 text-white'
+                  : 'bg-white text-gray-600 border border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              {f === 'All' ? 'All formats' : FORMAT_META[f].label}
+            </button>
+          ))}
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {items.map((q) => {
+            const book = byId.get(q.bookId)
+            if (!book) return null
+            const meta = FORMAT_META[q.format]
+            const Icon = meta.icon
+            return (
+              <button
+                key={q.id}
+                onClick={() => onOpen(book)}
+                className="group flex items-center gap-3.5 rounded-lg border border-gray-200 bg-white px-4 py-3.5 text-left transition hover:border-gray-300 hover:shadow-sm"
+              >
+                <div className="relative shrink-0">
+                  <BookCover book={book} className="h-20 w-14" />
+                  <span className="absolute -bottom-1.5 -right-1.5 grid h-6 w-6 place-items-center rounded-full bg-gray-900 text-white shadow">
+                    <Icon className="h-3 w-3" />
+                  </span>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className={`rounded px-1.5 py-px text-[10px] font-bold ${meta.chip}`}>
+                      {meta.label}
+                    </span>
+                    <span className="flex items-center gap-0.5 text-[11px] text-gray-400">
+                      <Timer className="h-3 w-3" /> {q.minutes} min
+                    </span>
+                  </div>
+                  <p className="mt-1 text-[13px] font-semibold leading-snug text-gray-900 line-clamp-2 group-hover:underline">
+                    {q.title}
+                  </p>
+                  <p className="mt-0.5 truncate text-[11px] text-gray-500">
+                    {book.translatedTitle} · {book.author}
+                  </p>
+                  {q.progress !== undefined && (
+                    <div className="mt-1.5 flex items-center gap-1.5">
+                      <div className="h-1 flex-1 overflow-hidden rounded-full bg-gray-100">
+                        <div
+                          className="h-full rounded-full bg-dancheong"
+                          style={{ width: `${q.progress}%` }}
+                        />
+                      </div>
+                      <span className="text-[10px] font-medium text-dancheong">
+                        {q.progress}%
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </button>
+            )
+          })}
+        </div>
       </div>
     </section>
   )
@@ -894,7 +946,6 @@ const TAG_STYLE: Record<string, string> = {
   Discussion: 'bg-blue-50 text-blue-600',
   'Book Club': 'bg-purple-50 text-purple-600',
   Question: 'bg-emerald-50 text-emerald-600',
-  Challenge: 'bg-amber-50 text-amber-600',
 }
 
 function CommunitySection({ onOpen }: { onOpen: (b: Book) => void }) {
@@ -1127,7 +1178,7 @@ function MembershipSection() {
         </div>
 
         <p className="mt-5 text-center text-[11px] text-gray-400">
-          Cancel anytime. Your reading history, badges, and For-You feed stay with
+          Cancel anytime. Your reading history, Quick Reads progress, and For-You feed stay with
           your account.
         </p>
       </div>
@@ -1205,7 +1256,7 @@ export default function App() {
         <BestsellerSection onOpen={setSelected} />
         <ForYouSection onOpen={setSelected} />
         <CurationSection onOpen={setSelected} />
-        <EventStrip />
+        <QuickReadsSection onOpen={setSelected} />
         <LibrarySection onOpen={setSelected} />
         <LiveSection />
         <CommunitySection onOpen={setSelected} />

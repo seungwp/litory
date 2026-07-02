@@ -4,6 +4,7 @@ import type {
   Curation,
   LiveSession,
   Plan,
+  QuickRead,
   Taste,
 } from './types'
 
@@ -346,6 +347,22 @@ export const LIVE_SESSIONS: LiveSession[] = [
 ]
 
 // ─────────────────────────────────────────────────────────────
+//  Quick Reads · books re-processed into 5–10 min content
+// ─────────────────────────────────────────────────────────────
+
+export const QUICK_READS: QuickRead[] = [
+  { id: 1, bookId: 1, format: 'Episode', title: 'Ep.1 — The Dream', minutes: 8, progress: 62 },
+  { id: 2, bookId: 16, format: 'Audio', title: 'Session 1 — “I feel empty”, narrated', minutes: 6 },
+  { id: 3, bookId: 9, format: 'Recap', title: 'Human Acts in 10 minutes — context before you dive in', minutes: 10 },
+  { id: 4, bookId: 5, format: 'Visual', title: '“The Head” — illustrated short story', minutes: 5 },
+  { id: 5, bookId: 2, format: 'Episode', title: 'Ep.3 — 1999, the first job', minutes: 7, progress: 21 },
+  { id: 6, bookId: 4, format: 'Audio', title: 'Title story, read aloud with ambient score', minutes: 9 },
+  { id: 7, bookId: 13, format: 'Episode', title: 'Ep.1 — The last hunt begins', minutes: 6 },
+  { id: 8, bookId: 7, format: 'Recap', title: 'Who was Admiral Yi Sun-sin? A 5-minute primer', minutes: 5 },
+  { id: 9, bookId: 15, format: 'Visual', title: '10 sentences to live as yourself — quote cards', minutes: 5 },
+]
+
+// ─────────────────────────────────────────────────────────────
 //  Community discussion board (global readers talking books)
 // ─────────────────────────────────────────────────────────────
 
@@ -385,11 +402,11 @@ export const COMMUNITY_POSTS: CommunityPost[] = [
   },
   {
     id: 4,
-    title: 'Day 5 of the Cursed Bunny challenge — “The Embodiment” broke me',
+    title: 'Just finished “The Embodiment” — can someone explain that ending?',
     bookId: 5,
     author: 'Jonas K.',
     country: '🇩🇪',
-    tag: 'Challenge',
+    tag: 'Question',
     replies: 41,
     likes: 155,
     timeAgo: '12h ago',
@@ -437,7 +454,7 @@ export const PLANS: Plan[] = [
       'Everything in Free Trial',
       '2,210+ editions across 44 languages',
       'Out-of-print archive exclusives',
-      'Reading challenges & shareable badges',
+      'Quick Reads: episodes, recaps, audio & visual stories',
       'Live sessions with authors & translators',
     ],
     highlighted: true,
