@@ -611,9 +611,11 @@ function UtilityBar({ apiOnline }: { apiOnline: boolean | null }) {
 function MainHeader({
   apiOnline,
   onOpenBook,
+  onSearched,
 }: {
   apiOnline: boolean
   onOpenBook: (b: Book) => void
+  onSearched: (keyword: string) => void
 }) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<Book[] | null>(null)
@@ -623,6 +625,7 @@ function MainHeader({
     const keyword = query.trim()
     if (!keyword) return
     setSearching(true)
+    onSearched(keyword)
     try {
       if (apiOnline) {
         const list = await fetchBooks(keyword)
@@ -1528,6 +1531,129 @@ function SideAds() {
 }
 
 // ═══════════════════════════════════════════════════════════════
+//  Live recommendation banner — reacts to what you view/search
+// ═══════════════════════════════════════════════════════════════
+
+/** One thing the user just did (view or search), fueling the banner */
+export interface Engagement {
+  type: 'view' | 'search'
+  label: string
+  bookId?: number
+  genre?: string
+  tags?: string[]
+}
+
+/** "You read “A” and searched “B” — how about these?" */
+function engagementSentence(engagements: Engagement[]): string {
+  const parts = engagements
+    .slice(-2)
+    .map((e) =>
+      e.type === 'view' ? `read “${e.label}”` : `searched for “${e.label}”`,
+    )
+  return `You ${parts.join(' and ')} — how about these?`
+}
+
+function RecommendationBanner({
+  engagements,
+  apiOnline,
+  userId,
+  onOpen,
+  onDismiss,
+}: {
+  engagements: Engagement[]
+  apiOnline: boolean
+  userId: number | null
+  onOpen: (b: Book) => void
+  onDismiss: () => void
+}) {
+  const [items, setItems] = useState<{ book: Book; score: number }[]>([])
+
+  useEffect(() => {
+    const seen = new Set(
+      engagements.filter((e) => e.bookId !== undefined).map((e) => e.bookId),
+    )
+    if (apiOnline && userId) {
+      // fresh feed so the just-logged interactions are reflected
+      refreshRecommendationFeed(userId, 10)
+        .then((data) =>
+          setItems(
+            data.items
+              .filter((item) => !seen.has(item.bookId))
+              .slice(0, 6)
+              .map((item) => ({
+                book: apiRecItemToBook(item),
+                score: Math.min(99, Math.max(1, Math.round(item.score))),
+              })),
+          ),
+        )
+        .catch(() => setItems([]))
+    } else {
+      // offline: match the bundled catalog by genre/tag overlap
+      const genres = new Set(
+        engagements.map((e) => e.genre).filter((g): g is string => Boolean(g)),
+      )
+      const tags = new Set(engagements.flatMap((e) => e.tags ?? []))
+      setItems(
+        BOOKS.filter((b) => !seen.has(b.id))
+          .map((b) => {
+            const overlap =
+              (genres.has(b.genre) ? 2 : 0) +
+              b.kContentTags.filter((t) => tags.has(t)).length
+            return {
+              book: b,
+              score: Math.min(99, 60 + overlap * 12 + ((b.id * 7) % 6)),
+              overlap,
+            }
+          })
+          .filter((r) => r.overlap > 0)
+          .sort((a, b) => b.score - a.score)
+          .slice(0, 6),
+      )
+    }
+  }, [engagements, apiOnline, userId])
+
+  if (items.length === 0) return null
+
+  return (
+    <section className="mx-auto max-w-6xl px-4 pt-4">
+      <div className="relative rounded-2xl border border-dancheong/30 bg-[#e8fbf6]/70 p-4">
+        <button
+          onClick={onDismiss}
+          aria-label="Dismiss recommendations"
+          className="absolute right-3 top-3 rounded p-1 text-gray-400 transition hover:bg-black/5 hover:text-gray-600"
+        >
+          <X className="h-4 w-4" />
+        </button>
+
+        <div className="mb-3 flex items-center gap-2.5 pr-8">
+          <img
+            src={`${import.meta.env.BASE_URL}tori.png`}
+            alt="Tori the mascot"
+            className="h-9 w-9 shrink-0 animate-tori-bob"
+          />
+          <div>
+            <p className="text-sm font-bold text-[#1d1d1f]">
+              {engagementSentence(engagements)}
+            </p>
+            <p className="text-[11px] text-gray-500">
+              {apiOnline
+                ? 'Freshly ranked by the tory recommendation engine, just for you'
+                : 'Picked from the archive based on your recent reading'}
+            </p>
+          </div>
+        </div>
+
+        <div className="no-scrollbar -mx-1 flex gap-4 overflow-x-auto px-1 pb-1">
+          {items.map(({ book, score }) => (
+            <BookItem key={book.id} book={book} onOpen={onOpen} matchScore={score} />
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════════
 //  Footer (corporate storefront style)
 // ═══════════════════════════════════════════════════════════════
 
@@ -1588,6 +1714,18 @@ export default function App() {
   const [selected, setSelected] = useState<Book | null>(null)
   const [apiOnline, setApiOnline] = useState<boolean | null>(null)
   const [userId, setUserId] = useState<number | null>(null)
+  // recent views/searches this session — fuels the top recommendation banner
+  const [engagements, setEngagements] = useState<Engagement[]>([])
+  const [dismissedAt, setDismissedAt] = useState(0)
+
+  const onSearched = useCallback((keyword: string) => {
+    setEngagements((prev) =>
+      prev[prev.length - 1]?.type === 'search' &&
+      prev[prev.length - 1]?.label === keyword
+        ? prev
+        : [...prev, { type: 'search', label: keyword }],
+    )
+  }, [])
 
   // Probe the backend once on mount; register/restore the demo user if up.
   useEffect(() => {
@@ -1614,6 +1752,20 @@ export default function App() {
   const openBook = useCallback(
     (book: Book) => {
       setSelected(book)
+      setEngagements((prev) =>
+        prev.some((e) => e.bookId === book.id)
+          ? prev
+          : [
+              ...prev,
+              {
+                type: 'view',
+                label: book.translatedTitle,
+                bookId: book.id,
+                genre: book.genre,
+                tags: book.kContentTags,
+              },
+            ],
+      )
       if (book.fromApi && userId) {
         logInteraction(userId, {
           bookId: book.id,
@@ -1651,9 +1803,22 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#f5f5f7] font-sans text-[#1d1d1f]">
       <UtilityBar apiOnline={apiOnline} />
-      <MainHeader apiOnline={apiOnline === true} onOpenBook={openBook} />
+      <MainHeader
+        apiOnline={apiOnline === true}
+        onOpenBook={openBook}
+        onSearched={onSearched}
+      />
       <CategoryNav />
       <main className="pb-14">
+        {engagements.length >= 2 && engagements.length > dismissedAt && (
+          <RecommendationBanner
+            engagements={engagements}
+            apiOnline={apiOnline === true}
+            userId={userId}
+            onOpen={openBook}
+            onDismiss={() => setDismissedAt(engagements.length)}
+          />
+        )}
         <BannerCarousel />
         <BestsellerSection onOpen={openBook} />
         <ForYouSection
