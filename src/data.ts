@@ -1,4 +1,11 @@
-import type { Book, Curation, LiveSession, Plan, Taste } from './types'
+import type {
+  Book,
+  CommunityPost,
+  Curation,
+  LiveSession,
+  Plan,
+  Taste,
+} from './types'
 
 // ─────────────────────────────────────────────────────────────
 //  Demo catalog data (frontend-only, no backend required)
@@ -335,6 +342,68 @@ export const LIVE_SESSIONS: LiveSession[] = [
     date: 'Jul 26',
     time: '19:00 KST',
     attendees: 2101,
+  },
+]
+
+// ─────────────────────────────────────────────────────────────
+//  Community discussion board (global readers talking books)
+// ─────────────────────────────────────────────────────────────
+
+export const COMMUNITY_POSTS: CommunityPost[] = [
+  {
+    id: 1,
+    title: 'That ending of The Vegetarian — did Yeong-hye win or lose? (spoilers)',
+    bookId: 1,
+    author: 'Emily R.',
+    country: '🇺🇸',
+    tag: 'Discussion',
+    replies: 128,
+    likes: 342,
+    timeAgo: '2h ago',
+  },
+  {
+    id: 2,
+    title: 'July Book Club · Human Acts — Week 2 reading thread',
+    bookId: 9,
+    author: 'Litory Book Club',
+    country: '🌏',
+    tag: 'Book Club',
+    replies: 96,
+    likes: 210,
+    timeAgo: '5h ago',
+  },
+  {
+    id: 3,
+    title: 'Reading Kim Jiyoung with my mom — she says it could be set in France',
+    bookId: 2,
+    author: 'Camille D.',
+    country: '🇫🇷',
+    tag: 'Discussion',
+    replies: 74,
+    likes: 188,
+    timeAgo: '8h ago',
+  },
+  {
+    id: 4,
+    title: 'Day 5 of the Cursed Bunny challenge — “The Embodiment” broke me',
+    bookId: 5,
+    author: 'Jonas K.',
+    country: '🇩🇪',
+    tag: 'Challenge',
+    replies: 41,
+    likes: 155,
+    timeAgo: '12h ago',
+  },
+  {
+    id: 5,
+    title: 'New to Korean sci-fi — start with Kim Cho-yeop or Cursed Bunny?',
+    bookId: 4,
+    author: 'Thanh N.',
+    country: '🇻🇳',
+    tag: 'Question',
+    replies: 63,
+    likes: 97,
+    timeAgo: '1d ago',
   },
 ]
 

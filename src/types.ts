@@ -66,6 +66,20 @@ export interface LiveSession {
   attendees: number
 }
 
+/** A community discussion thread about a book */
+export interface CommunityPost {
+  id: number
+  title: string
+  bookId: number
+  author: string
+  /** Flag emoji showing where the reader is from */
+  country: string
+  tag: 'Discussion' | 'Book Club' | 'Question' | 'Challenge'
+  replies: number
+  likes: number
+  timeAgo: string
+}
+
 /** Subscription plan card */
 export interface Plan {
   id: string

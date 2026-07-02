@@ -19,10 +19,14 @@ import {
   Check,
   ChevronDown,
   Menu,
+  MessageCircle,
+  ThumbsUp,
+  PenSquare,
 } from 'lucide-react'
 import type { Book } from './types'
 import {
   BOOKS,
+  COMMUNITY_POSTS,
   CURATIONS,
   GENRES,
   LANGUAGE_LABEL,
@@ -441,6 +445,7 @@ const NAV_ITEMS = [
   { label: 'Curations', href: '#curation' },
   { label: 'Live', href: '#live' },
   { label: 'Challenges', href: '#challenges' },
+  { label: 'Community', href: '#community', hot: true },
   { label: 'Membership', href: '#membership' },
 ]
 
@@ -882,6 +887,187 @@ function LiveSection() {
 }
 
 // ═══════════════════════════════════════════════════════════════
+//  Section: Community (book discussion board)
+// ═══════════════════════════════════════════════════════════════
+
+const TAG_STYLE: Record<string, string> = {
+  Discussion: 'bg-blue-50 text-blue-600',
+  'Book Club': 'bg-purple-50 text-purple-600',
+  Question: 'bg-emerald-50 text-emerald-600',
+  Challenge: 'bg-amber-50 text-amber-600',
+}
+
+function CommunitySection({ onOpen }: { onOpen: (b: Book) => void }) {
+  const byId = useMemo(() => new Map(BOOKS.map((b) => [b.id, b])), [])
+
+  return (
+    <section id="community" className="mx-auto max-w-6xl px-4 pt-10">
+      <SectionHeader
+        title="Community"
+        subtitle="Readers from 44 language regions, arguing about the same ending"
+        action="All discussions"
+      />
+
+      <div className="grid gap-4 lg:grid-cols-[1fr_280px]">
+        {/* discussion thread list */}
+        <div className="divide-y divide-gray-100 rounded-lg border border-gray-200 bg-white">
+          {COMMUNITY_POSTS.map((post) => {
+            const book = byId.get(post.bookId)
+            return (
+              <div
+                key={post.id}
+                className="flex items-center gap-3 px-4 py-3 transition hover:bg-gray-50"
+              >
+                <span
+                  className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold ${
+                    TAG_STYLE[post.tag]
+                  }`}
+                >
+                  {post.tag}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[13px] font-medium text-gray-900 hover:underline">
+                    {post.title}
+                  </p>
+                  <p className="mt-0.5 flex items-center gap-1.5 text-[11px] text-gray-400">
+                    <span>
+                      {post.country} {post.author}
+                    </span>
+                    <span>·</span>
+                    {book && (
+                      <>
+                        <button
+                          onClick={() => onOpen(book)}
+                          className="truncate text-gray-500 hover:text-dancheong hover:underline"
+                        >
+                          {book.translatedTitle}
+                        </button>
+                        <span>·</span>
+                      </>
+                    )}
+                    <span>{post.timeAgo}</span>
+                  </p>
+                </div>
+                <span className="flex shrink-0 items-center gap-1 text-[11px] text-gray-400">
+                  <MessageCircle className="h-3.5 w-3.5" /> {post.replies}
+                </span>
+                <span className="flex shrink-0 items-center gap-1 text-[11px] text-gray-400">
+                  <ThumbsUp className="h-3.5 w-3.5" /> {post.likes}
+                </span>
+              </div>
+            )
+          })}
+        </div>
+
+        {/* side: book club + write CTA */}
+        <div className="flex flex-col gap-3">
+          <div className="rounded-lg border border-gray-200 bg-white p-4">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-dancheong">
+              July Book Club
+            </p>
+            <h3 className="mt-1 text-sm font-bold text-gray-900">
+              Human Acts — read together, week by week
+            </h3>
+            <p className="mt-1 text-xs leading-relaxed text-gray-500">
+              One chapter a week, one discussion thread, readers from 20+
+              countries. Finish together on Jul 31.
+            </p>
+            <p className="mt-2 flex items-center gap-1 text-[11px] text-gray-400">
+              <Users className="h-3 w-3" /> 3,842 members reading now
+            </p>
+            <button className="mt-3 w-full rounded-lg bg-gray-900 py-2 text-xs font-bold text-white transition hover:bg-gray-700">
+              Join Book Club
+            </button>
+          </div>
+          <button className="flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-gray-300 py-3 text-xs font-semibold text-gray-500 transition hover:border-gray-400 hover:text-gray-700">
+            <PenSquare className="h-3.5 w-3.5" /> Start a new discussion
+          </button>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Side ad banners (fixed wings, wide screens only)
+// ═══════════════════════════════════════════════════════════════
+
+const SIDE_ADS = [
+  {
+    id: 'left',
+    position: { left: 'calc(50% - 768px)' },
+    bg: 'bg-[#173f35]',
+    eyebrow: 'PARTNER',
+    lines: ['2026 Korean', 'Literature', 'Translation', 'Awards'],
+    sub: 'Hosted by LTI Korea — submissions open now',
+    cta: 'Learn More',
+    href: '#curation',
+  },
+  {
+    id: 'right',
+    position: { right: 'calc(50% - 768px)' },
+    bg: 'bg-dancheong',
+    eyebrow: 'MEMBERSHIP',
+    lines: ['First', '30 Days', '$0'],
+    sub: 'Unlimited access to 2,210+ translated works',
+    cta: 'Start Free Trial',
+    href: '#membership',
+  },
+]
+
+function SideAds() {
+  const [closed, setClosed] = useState<string[]>([])
+
+  return (
+    <>
+      {SIDE_ADS.filter((ad) => !closed.includes(ad.id)).map((ad) => (
+        <aside
+          key={ad.id}
+          style={ad.position}
+          className="fixed top-36 z-30 hidden w-40 min-[1580px]:block"
+        >
+          <div className={`relative overflow-hidden rounded-lg ${ad.bg} text-white shadow-md`}>
+            <div className="flex items-center justify-between px-3 pt-2.5">
+              <span className="rounded-sm bg-black/25 px-1 py-px text-[9px] font-bold tracking-wider text-white/70">
+                AD
+              </span>
+              <button
+                onClick={() => setClosed((c) => [...c, ad.id])}
+                aria-label="Close ad"
+                className="rounded p-0.5 text-white/50 hover:bg-black/20 hover:text-white"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+            <div className="px-3.5 pb-4 pt-3">
+              <p className="text-[9px] font-bold tracking-[0.2em] text-white/60">
+                {ad.eyebrow}
+              </p>
+              <p className="mt-1.5 text-lg font-extrabold leading-tight">
+                {ad.lines.map((line) => (
+                  <span key={line} className="block">
+                    {line}
+                  </span>
+                ))}
+              </p>
+              <p className="mt-2.5 text-[10px] leading-relaxed text-white/70">
+                {ad.sub}
+              </p>
+              <a
+                href={ad.href}
+                className="mt-3 block rounded-full bg-white py-1.5 text-center text-[10px] font-bold text-gray-900 transition hover:bg-white/90"
+              >
+                {ad.cta}
+              </a>
+            </div>
+          </div>
+        </aside>
+      ))}
+    </>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════════
 //  Section: Membership (subscription plans)
 // ═══════════════════════════════════════════════════════════════
 
@@ -1022,9 +1208,11 @@ export default function App() {
         <EventStrip />
         <LibrarySection onOpen={setSelected} />
         <LiveSection />
+        <CommunitySection onOpen={setSelected} />
         <MembershipSection />
       </main>
       <Footer />
+      <SideAds />
 
       {selected && (
         <ViewerModal book={selected} onClose={() => setSelected(null)} />
