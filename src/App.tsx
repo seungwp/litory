@@ -654,14 +654,14 @@ function MainHeader({
   return (
     <div className="bg-white">
       <div className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-3.5 sm:gap-8">
-        <a href="#top" title="Litory" className="group flex shrink-0 items-center gap-1.5">
+        <a href="#top" title="U-tory" className="group flex shrink-0 items-center gap-1.5">
           <img
             src={`${import.meta.env.BASE_URL}tori.png`}
             alt="Tori the mascot"
             className="h-10 w-10 animate-tori-bob group-hover:animate-tori-jump"
           />
           <span className="text-2xl font-extrabold tracking-tight text-gray-900">
-            Litory
+            U-tory
           </span>
         </a>
 
