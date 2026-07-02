@@ -431,18 +431,18 @@ export const COMMUNITY_POSTS: CommunityPost[] = [
 export const PLANS: Plan[] = [
   {
     id: 'trial',
-    name: 'Free Trial',
+    name: '완전 무료',
     price: '$0',
-    period: 'first 30 days',
-    tagline: 'Fall in love first. Pay later.',
+    period: '항상 무료',
+    tagline: '처음부터 끝까지 무료로 읽으세요.',
     features: [
       'Unlimited access to the full library',
       'AI For-You feed & taste onboarding',
       '5–10 min bite-sized episodes',
-      'Cancel anytime, no card lock-in',
+      '언제든지 바로 이용 가능',
     ],
     highlighted: false,
-    cta: 'Start Free Trial',
+    cta: '무료로 시작',
   },
   {
     id: 'monthly',
@@ -451,7 +451,7 @@ export const PLANS: Plan[] = [
     period: 'per month',
     tagline: 'Every translation. Every language. One click.',
     features: [
-      'Everything in Free Trial',
+      '완전 무료 혜택 포함',
       '2,210+ editions across 44 languages',
       'Out-of-print archive exclusives',
       'Quick Reads: episodes, recaps, audio & visual stories',

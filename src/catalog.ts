@@ -230,18 +230,18 @@ export const COMMUNITY_POSTS: CommunityPost[] = BOOKS.slice(0, 5).map((book, ind
 export const PLANS: Plan[] = [
   {
     id: 'trial',
-    name: 'Free Trial',
+    name: '완전 무료',
     price: '$0',
-    period: 'first 30 days',
-    tagline: 'Read the archive first. Decide later.',
+    period: '항상 무료',
+    tagline: '처음부터 끝까지 무료로 읽으세요.',
     features: [
       'Unlimited access to the full library',
       'Taste-based recommendations',
       '5–10 min bite-sized reading sessions',
-      'Cancel anytime, no card lock-in',
+      '언제든지 바로 이용 가능',
     ],
     highlighted: false,
-    cta: 'Start Free Trial',
+    cta: '무료로 시작',
   },
   {
     id: 'monthly',
@@ -250,7 +250,7 @@ export const PLANS: Plan[] = [
     period: 'per month',
     tagline: 'Every translation. Every shelf. One account.',
     features: [
-      'Everything in Free Trial',
+      '완전 무료 혜택 포함',
       `All ${BOOKS.length}+ books in the archive`,
       'Quick Reads: episodes, recaps, audio & visual notes',
       'Live sessions with authors & translators',

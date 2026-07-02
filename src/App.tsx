@@ -419,7 +419,7 @@ function ViewerModal({ book, onClose }: { book: Book; onClose: () => void }) {
             </p>
           </div>
           <button className="w-full rounded bg-dancheong py-2.5 text-sm font-bold text-white transition hover:bg-dancheong/90">
-            Read with Free Trial
+            완전 무료로 읽기
           </button>
         </aside>
 
@@ -789,23 +789,13 @@ function CategoryNav() {
 // ═══════════════════════════════════════════════════════════════
 
 const BANNERS = [
-  {
-    id: 'banner-modern-bestseller',
-    eyebrow: 'FEATURED BESTSELLER',
-    title: MODERN_BESTSELLERS[0]?.translatedTitle ?? 'Bestseller',
-    sub: [MODERN_BESTSELLERS[0]?.author, MODERN_BESTSELLERS[0]?.genre].filter(Boolean).join(' · '),
-    cta: 'Open Preview',
-    href: '#bestsellers',
-    bg: 'bg-white',
-    accent: 'text-black/45',
-  },
-  ...BOOKS.slice(0, 2).map((book, index) => ({
+  ...MODERN_BESTSELLERS.slice(0, 3).map((book, index) => ({
     id: `banner-${book.id}`,
-    eyebrow: index === 0 ? 'ARCHIVE HIGHLIGHT' : 'READ NOW',
+    eyebrow: ['FEATURED BESTSELLER', "EDITOR'S PICK", 'READ NOW'][index] ?? 'READ NOW',
     title: book.translatedTitle,
     sub: `${book.author} · ${book.genre}`,
     cta: 'Open Preview',
-    href: '#library',
+    href: '#bestsellers',
     bg: 'bg-white',
     accent: 'text-black/45',
   })),
@@ -1439,7 +1429,7 @@ const SIDE_ADS = [
   },
 ]
 
-const BANNER_SHOWCASE = [MODERN_BESTSELLERS[0], BOOKS[0], BOOKS[1]].filter(
+const BANNER_SHOWCASE = MODERN_BESTSELLERS.slice(0, 3).filter(
   (book): book is Book => Boolean(book),
 )
 
