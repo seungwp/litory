@@ -398,10 +398,12 @@ function MainHeader() {
   return (
     <div className="bg-white">
       <div className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-3.5 sm:gap-8">
-        <a href="#top" className="flex shrink-0 items-center gap-1.5">
-          <span className="grid h-7 w-7 place-items-center rounded bg-dancheong text-white">
-            <BookOpen className="h-4 w-4" />
-          </span>
+        <a href="#top" className="group flex shrink-0 items-center gap-2">
+          <img
+            src={`${import.meta.env.BASE_URL}tori.png`}
+            alt="Tori, the Litory mascot"
+            className="h-10 w-10 animate-tori-bob group-hover:animate-tori-jump"
+          />
           <span className="text-xl font-extrabold tracking-tight text-gray-900">
             Litory
           </span>
