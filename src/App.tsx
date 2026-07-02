@@ -27,6 +27,11 @@ import {
   PenSquare,
   RefreshCw,
   Loader2,
+  Heart,
+  Sparkles,
+  Coffee,
+  Eye,
+  Feather,
 } from 'lucide-react'
 import type { Book } from './types'
 import {
@@ -70,21 +75,136 @@ const readersOf = (b: Book) => {
 //  Shared presentational components
 // ═══════════════════════════════════════════════════════════════
 
+interface CoverStyle {
+  gradient: string
+  icon: any
+  pattern: React.ReactNode
+  fontClass: string
+  borderClass: string
+}
+
+function getCoverStyle(book: Book): CoverStyle {
+  const genre = (book.genre ?? '').toLowerCase()
+  const color = book.coverColor ?? '#1c1917'
+  
+  // Default values
+  let gradient = `linear-gradient(135deg, ${color} 0%, ${color}cc 60%, rgba(0,0,0,0.4) 100%)`
+  let icon = BookOpen
+  let pattern: React.ReactNode = null
+  let fontClass = 'font-serif'
+  let borderClass = 'border border-white/10'
+
+  if (genre.includes('feminist') || genre.includes('realism')) {
+    // Elegant waves pattern
+    gradient = `linear-gradient(145deg, ${color} 0%, ${color}e6 50%, rgba(20,0,10,0.5) 100%)`
+    icon = Heart
+    pattern = (
+      <svg className="absolute inset-0 h-full w-full opacity-[0.08]" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <pattern id="waves" width="20" height="20" patternUnits="userSpaceOnUse">
+            <path d="M0 10 Q 5 5, 10 10 T 20 10" fill="none" stroke="white" strokeWidth="1" />
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#waves)" />
+      </svg>
+    )
+    fontClass = 'font-serif'
+    borderClass = 'border-2 border-white/20'
+  } else if (genre.includes('history') || genre.includes('historical')) {
+    // Classic gold-like border, serious book design
+    gradient = `linear-gradient(180deg, ${color} 0%, ${color}f2 70%, rgba(10,5,5,0.7) 100%)`
+    icon = Archive
+    pattern = (
+      <div className="absolute inset-2 border border-dashed border-white/15 rounded-lg pointer-events-none" />
+    )
+    fontClass = 'font-serif tracking-tight'
+    borderClass = 'border-2 border-amber-900/30'
+  } else if (genre.includes('fantasy') || genre.includes('speculative')) {
+    // Starry/sparkly background
+    gradient = `linear-gradient(135deg, ${color} 0%, ${color}dd 50%, #1e1330 100%)`
+    icon = Sparkles
+    pattern = (
+      <svg className="absolute inset-0 h-full w-full opacity-[0.12]" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="15%" cy="20%" r="1" fill="white" />
+        <circle cx="75%" cy="30%" r="1.5" fill="white" />
+        <circle cx="45%" cy="60%" r="1" fill="white" />
+        <circle cx="85%" cy="75%" r="1.2" fill="white" />
+        <circle cx="25%" cy="80%" r="1.5" fill="white" />
+      </svg>
+    )
+    fontClass = 'font-sans'
+    borderClass = 'border border-indigo-500/20'
+  } else if (genre.includes('essay') || genre.includes('healing')) {
+    // Soft, comforting warm design
+    gradient = `linear-gradient(160deg, ${color} 0%, ${color}e6 60%, rgba(60,40,20,0.3) 100%)`
+    icon = Coffee
+    pattern = (
+      <svg className="absolute inset-0 h-full w-full opacity-[0.06]" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <pattern id="dots" x="0" y="0" width="10" height="10" patternUnits="userSpaceOnUse">
+            <circle cx="2" cy="2" r="1" fill="white" />
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#dots)" />
+      </svg>
+    )
+    fontClass = 'font-sans'
+    borderClass = 'border border-orange-500/10'
+  } else if (genre.includes('thriller') || genre.includes('psychological') || genre.includes('dark')) {
+    // Darker, sharp lines pattern
+    gradient = `linear-gradient(135deg, #18181b 0%, ${color}dd 70%, #09090b 100%)`
+    icon = Eye
+    pattern = (
+      <svg className="absolute inset-0 h-full w-full opacity-[0.08]" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <pattern id="stripes" width="20" height="20" patternTransform="rotate(45 0 0)" patternUnits="userSpaceOnUse">
+            <line x1="0" y1="0" x2="0" y2="20" stroke="white" strokeWidth="2" />
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#stripes)" />
+      </svg>
+    )
+    fontClass = 'font-sans uppercase font-black'
+    borderClass = 'border border-zinc-800'
+  } else if (genre.includes('poetry')) {
+    // Elegant compass/feather style with clean gradient
+    gradient = `linear-gradient(135deg, ${color} 0%, ${color}d9 50%, rgba(20,20,40,0.4) 100%)`
+    icon = Feather
+    pattern = (
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.05)_0%,transparent_70%)]" />
+    )
+    fontClass = 'font-serif italic'
+    borderClass = 'border border-sky-400/20'
+  }
+
+  return { gradient, icon, pattern, fontClass, borderClass }
+}
+
 /** Placeholder cover: coverColor gradient + typography */
 function BookCover({ book, className = '' }: { book: Book; className?: string }) {
+  const { gradient, icon: Icon, pattern, fontClass, borderClass } = getCoverStyle(book)
+
   return (
     <div
-      className={`relative flex flex-col justify-between overflow-hidden rounded-[1rem] p-2.5 text-white shadow-[0_10px_30px_rgba(0,0,0,0.12)] ring-1 ring-black/5 ${className}`}
+      className={`relative flex flex-col justify-between overflow-hidden rounded-[1rem] p-2.5 text-white shadow-[0_10px_30px_rgba(0,0,0,0.12)] ring-1 ring-black/5 ${borderClass} ${className}`}
       style={{
-        background: `linear-gradient(150deg, ${book.coverColor} 0%, ${book.coverColor}cc 55%, rgba(0,0,0,0.5) 100%)`,
+        background: gradient,
       }}
     >
-      <BookOpen className="h-3.5 w-3.5 opacity-70" strokeWidth={1.6} />
-      <div className="pl-0.5">
-        <p className="font-serif text-[12px] font-bold leading-snug drop-shadow-sm line-clamp-3">
+      {pattern}
+      <div className="relative z-10 flex items-center justify-between">
+        <Icon className="h-3.5 w-3.5 opacity-70" strokeWidth={1.8} />
+        {book.year && (
+          <span className="text-[8px] font-medium opacity-50 tracking-wider">
+            {book.year}
+          </span>
+        )}
+      </div>
+      <div className="relative z-10 pl-0.5">
+        <p className={`${fontClass} text-[12px] font-bold leading-snug drop-shadow-md line-clamp-3`}>
           {book.translatedTitle}
         </p>
-        <p className="mt-0.5 text-[9px] font-medium text-white/70">
+        <p className="mt-0.5 text-[9px] font-medium text-white/70 truncate">
           {book.originalTitle ?? book.genre}
         </p>
       </div>
@@ -303,6 +423,20 @@ function ViewerModal({ book, onClose }: { book: Book; onClose: () => void }) {
   const [loadingText, setLoadingText] = useState(false)
   const [page, setPage] = useState(0)
 
+  const redirectUrl = useMemo(() => {
+    if (book.sourceUrl) {
+      return book.sourceUrl
+    }
+    const matchedIds = new Set([
+      1, 2, 3, 5, 9, 10, 13, 14, 15, 16, 9001, 
+      9002, 9003, 9004, 9005, 9006, 9007, 9008
+    ])
+    if (matchedIds.has(book.id)) {
+      return 'https://library.ltikorea.or.kr/translatedbooks'
+    }
+    return null
+  }, [book.id, book.sourceUrl])
+
   // load the full md text for archive books that ship one
   useEffect(() => {
     setFullText(null)
@@ -363,19 +497,19 @@ function ViewerModal({ book, onClose }: { book: Book; onClose: () => void }) {
     >
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
-      <div className="animate-scale-in relative flex h-[86vh] w-full max-w-5xl flex-col overflow-hidden rounded-lg bg-white shadow-2xl md:flex-row">
+      <div className="animate-scale-in relative flex h-[90vh] sm:h-[86vh] w-full max-w-5xl flex-col overflow-hidden rounded-t-xl sm:rounded-lg bg-white shadow-2xl md:flex-row">
         {/* ── left: bibliographic panel ── */}
-        <aside className="flex shrink-0 flex-col gap-4 border-b border-gray-200 bg-gray-50 p-5 md:w-64 md:border-b-0 md:border-r">
+        <aside className="hidden md:flex shrink-0 flex-col gap-3 sm:gap-4 border-b border-gray-200 bg-gray-50 p-4 sm:p-5 md:w-64 md:border-b-0 md:border-r">
           <BookCover book={book} className="hidden aspect-[3/4] w-full md:flex" />
           <div>
             <span className="text-[10px] font-bold uppercase tracking-wider text-dancheong">
               {book.genre}
             </span>
-            <h2 className="mt-1 text-lg font-bold leading-tight text-gray-900">
+            <h2 className="mt-1 text-base sm:text-lg font-bold leading-tight text-gray-900">
               {book.translatedTitle}
             </h2>
-            <p className="text-sm text-gray-500">{book.originalTitle ?? book.genre}</p>
-            <p className="mt-1 text-xs text-gray-500">
+            <p className="text-xs sm:text-sm text-gray-500">{book.originalTitle ?? book.genre}</p>
+            <p className="mt-1 text-[11px] sm:text-xs text-gray-500">
               {book.author}
               {book.year ? ` · ${book.year}` : ''}
             </p>
@@ -400,7 +534,7 @@ function ViewerModal({ book, onClose }: { book: Book; onClose: () => void }) {
             </p>
           )}
           {book.whyRecommended && (
-            <div className="rounded border border-gray-200 bg-white p-3">
+            <div className="rounded border border-gray-200 bg-white p-3 hidden md:block">
               <p className="flex items-center gap-1.5 text-[11px] font-bold text-gray-900">
                 <Zap className="h-3.5 w-3.5 text-dancheong" /> Why this pick?
               </p>
@@ -409,7 +543,7 @@ function ViewerModal({ book, onClose }: { book: Book; onClose: () => void }) {
               </p>
             </div>
           )}
-          <div className="mt-auto rounded border border-gray-200 bg-white p-3">
+          <div className="mt-auto rounded border border-gray-200 bg-white p-3 hidden md:block">
             <p className="flex items-center gap-1.5 text-[11px] font-bold text-gray-900">
               <Timer className="h-3.5 w-3.5 text-dancheong" /> Bite-sized episodes
             </p>
@@ -418,17 +552,14 @@ function ViewerModal({ book, onClose }: { book: Book; onClose: () => void }) {
               day keeps your streak alive.
             </p>
           </div>
-          <button className="w-full rounded bg-dancheong py-2.5 text-sm font-bold text-white transition hover:bg-dancheong/90">
-            완전 무료로 읽기
-          </button>
         </aside>
 
         {/* ── right: reader body ── */}
-        <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex min-w-0 flex-1 flex-col min-h-0">
           <div className="flex items-center justify-between border-b border-gray-200 px-4 py-2.5">
-            <div className="flex items-center gap-1.5 text-xs font-medium text-gray-500">
-              <BookOpen className="h-4 w-4" />
-              Litory reader · preview
+            <div className="flex items-center gap-1.5 text-xs font-medium text-gray-500 truncate pr-4">
+              <BookOpen className="h-4 w-4 shrink-0" />
+              <span className="truncate">{book.translatedTitle} · {book.author}</span>
             </div>
             <div className="flex items-center gap-1">
               <button
@@ -458,12 +589,12 @@ function ViewerModal({ book, onClose }: { book: Book; onClose: () => void }) {
 
           <div
             key={clampedPage}
-            className="viewer-scroll flex-1 overflow-y-auto bg-[#fbfaf7] px-6 py-8 sm:px-14 sm:py-12"
+            className="viewer-scroll flex-1 overflow-y-auto bg-[#fbfaf7] px-4 py-6 sm:px-14 sm:py-12"
           >
             <div className="mx-auto max-w-prose">
               {clampedPage === 0 && (
                 <>
-                  <p className="mb-6 text-center text-xs uppercase tracking-[0.3em] text-gray-400">
+                  <p className="mb-6 text-center text-xs uppercase tracking-[0.15em] sm:tracking-[0.3em] text-gray-400">
                     {book.author} — {book.translatedTitle}
                   </p>
                   <h3
@@ -507,19 +638,30 @@ function ViewerModal({ book, onClose }: { book: Book; onClose: () => void }) {
               {!loadingText && clampedPage === lastPage && (
                 <div className="mt-10 rounded-xl border border-gray-200 bg-white p-5 text-center">
                   <p className="text-sm font-bold text-gray-900">
-                    You reached the end of this preview
+                    {fullText ? 'You reached the end of this book!' : 'You reached the end of this preview'}
                   </p>
-                  <p className="mt-1 text-xs text-gray-500">
-                    Keep reading {book.translatedTitle} — and{' '}
-                    {BOOKS.length}+ more translated works — with Litory.
+                  <p className="mt-1 text-xs text-gray-500 font-serif">
+                    {fullText
+                      ? `Enjoyed this work? Keep reading more translated classics on Litory completely for free.`
+                      : `Keep reading ${book.translatedTitle} — and all other ${BOOKS.length}+ translated works — completely for free.`}
                   </p>
-                  <a
-                    href="#membership"
-                    onClick={onClose}
-                    className="mt-3 inline-block rounded-full bg-dancheong px-5 py-2 text-xs font-bold text-white transition hover:bg-dancheong/90"
-                  >
-                    Start 30 Days Free
-                  </a>
+                  {redirectUrl ? (
+                    <a
+                      href={redirectUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-3 inline-block rounded-full bg-dancheong px-5 py-2.5 text-xs font-bold text-white transition hover:bg-dancheong/90 cursor-pointer"
+                    >
+                      Browse More Free Books
+                    </a>
+                  ) : (
+                    <button
+                      onClick={onClose}
+                      className="mt-3 inline-block rounded-full bg-dancheong px-5 py-2.5 text-xs font-bold text-white transition hover:bg-dancheong/90 cursor-pointer"
+                    >
+                      Browse More Free Books
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -535,9 +677,11 @@ function ViewerModal({ book, onClose }: { book: Book; onClose: () => void }) {
             </button>
             <span>
               Page {clampedPage + 1} / {pages.length}
-              {fullText ? ' · Full text' : ' · Preview'}
-              <span className="ml-2 hidden text-gray-300 sm:inline">
-                ← → keys work too
+              <span className="hidden sm:inline">
+                {fullText ? ' · Full text' : ' · Preview'}
+              </span>
+              <span className="ml-2 hidden md:inline">
+                · ← → keys work too
               </span>
             </span>
             <button
@@ -587,9 +731,9 @@ function UtilityBar({ apiOnline }: { apiOnline: boolean | null }) {
           )}
         </div>
         <div className="flex items-center gap-3">
-          <a href="#membership" className="hover:text-gray-700">
-            Membership
-          </a>
+          <span className="text-emerald-600 font-semibold bg-emerald-50 px-2.5 py-0.5 rounded-full text-[10px]">
+            100% Free Access
+          </span>
           <span className="text-gray-200">|</span>
           <a href="#" onClick={(e) => e.preventDefault()} className="hover:text-gray-700">
             Sign In
@@ -789,19 +933,57 @@ function CategoryNav() {
 // ═══════════════════════════════════════════════════════════════
 
 const BANNERS = [
-  ...MODERN_BESTSELLERS.slice(0, 3).map((book, index) => ({
-    id: `banner-${book.id}`,
-    eyebrow: ['FEATURED BESTSELLER', "EDITOR'S PICK", 'READ NOW'][index] ?? 'READ NOW',
-    title: book.translatedTitle,
-    sub: `${book.author} · ${book.genre}`,
+  {
+    id: 'banner-9004',
+    eyebrow: 'FEATURED BESTSELLER',
+    title: MODERN_BESTSELLERS[0]?.translatedTitle || 'Kim Jiyoung, Born 1982',
+    sub: `${MODERN_BESTSELLERS[0]?.author || 'Cho Nam-joo'} · ${MODERN_BESTSELLERS[0]?.genre || 'Feminist Realism'}`,
     cta: 'Open Preview',
-    href: '#bestsellers',
-    bg: 'bg-white',
-    accent: 'text-black/45',
-  })),
+    bg: 'bg-gradient-to-br from-[#fff6f5] to-[#fdeae7]',
+    textColor: 'text-[#2d120f]',
+    subColor: 'text-[#7d5f5a]',
+    eyebrowColor: 'text-[#c9452f]',
+    btnBg: 'bg-[#c9452f]',
+    btnText: 'text-white',
+    btnHover: 'hover:bg-[#b03926]',
+    isDark: false,
+    book: MODERN_BESTSELLERS[0],
+  },
+  {
+    id: 'banner-9001',
+    eyebrow: "EDITOR'S PICK",
+    title: MODERN_BESTSELLERS[1]?.translatedTitle || 'The Vegetarian',
+    sub: `${MODERN_BESTSELLERS[1]?.author || 'Han Kang'} · ${MODERN_BESTSELLERS[1]?.genre || 'Feminist Realism'}`,
+    cta: 'Open Preview',
+    bg: 'bg-gradient-to-br from-[#f6faf6] to-[#ebf3ea]',
+    textColor: 'text-[#182317]',
+    subColor: 'text-[#526451]',
+    eyebrowColor: 'text-[#527d4e]',
+    btnBg: 'bg-[#527d4e]',
+    btnText: 'text-white',
+    btnHover: 'hover:bg-[#43673f]',
+    isDark: false,
+    book: MODERN_BESTSELLERS[1],
+  },
+  {
+    id: 'banner-9002',
+    eyebrow: 'READ NOW',
+    title: MODERN_BESTSELLERS[2]?.translatedTitle || 'Human Acts',
+    sub: `${MODERN_BESTSELLERS[2]?.author || 'Han Kang'} · ${MODERN_BESTSELLERS[2]?.genre || 'Historical Fiction'}`,
+    cta: 'Open Preview',
+    bg: 'bg-gradient-to-br from-[#241a1a] to-[#120d0d]',
+    textColor: 'text-[#f5ecec]',
+    subColor: 'text-[#b8a6a6]',
+    eyebrowColor: 'text-[#ff6e6e]',
+    btnBg: 'bg-[#ff6e6e]',
+    btnText: 'text-black font-semibold',
+    btnHover: 'hover:bg-[#e05b5b]',
+    isDark: true,
+    book: MODERN_BESTSELLERS[2],
+  },
 ]
 
-function BannerCarousel() {
+function BannerCarousel({ onOpen }: { onOpen: (b: Book) => void }) {
   const [index, setIndex] = useState(0)
   const next = useCallback(() => setIndex((i) => (i + 1) % BANNERS.length), [])
   const prev = () => setIndex((i) => (i - 1 + BANNERS.length) % BANNERS.length)
@@ -813,39 +995,45 @@ function BannerCarousel() {
 
   const banner = BANNERS[index]
 
+  if (!banner.book) return null
+
   return (
     <section id="top" className="mx-auto max-w-6xl px-4 pt-6">
       <div
-        className={`relative overflow-hidden rounded-[2rem] border border-black/5 bg-white text-[#1d1d1f] shadow-[0_20px_60px_rgba(0,0,0,0.06)] transition-colors duration-500`}
+        className={`relative overflow-hidden rounded-[2rem] border border-black/5 ${banner.bg} ${banner.textColor} shadow-[0_20px_60px_rgba(0,0,0,0.06)] transition-all duration-500`}
       >
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(0,0,0,0.04),transparent_32%),radial-gradient(circle_at_left,rgba(0,0,0,0.03),transparent_28%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.05),transparent_32%),radial-gradient(circle_at_left,rgba(255,255,255,0.02),transparent_28%)]" />
         <div className="relative flex items-center justify-between px-6 py-8 sm:px-10 sm:py-10">
           <div className="max-w-xl">
-            <p className={`text-[11px] font-semibold tracking-[0.22em] text-black/45`}>
+            <p className={`text-[11px] font-semibold tracking-[0.22em] ${banner.eyebrowColor}`}>
               {banner.eyebrow}
             </p>
             <h2 className="mt-2 text-3xl font-semibold tracking-tight leading-tight sm:text-4xl">
               {banner.title}
             </h2>
-            <p className="mt-3 max-w-lg text-[15px] leading-relaxed text-black/60 sm:text-base">
+            <p className={`mt-3 max-w-lg text-[15px] leading-relaxed ${banner.subColor} sm:text-base`}>
               {banner.sub}
             </p>
-            <a
-              href={banner.href}
-              className="mt-5 inline-flex rounded-full bg-[#1d1d1f] px-5 py-2.5 text-sm font-medium text-white transition hover:bg-black"
+            <button
+              onClick={() => onOpen(banner.book)}
+              className={`mt-5 inline-flex rounded-full ${banner.btnBg} ${banner.btnText} px-5 py-2.5 text-sm font-medium transition ${banner.btnHover} cursor-pointer`}
             >
               {banner.cta}
-            </a>
+            </button>
           </div>
-          {/* decorative book stack */}
-          <div className="hidden shrink-0 -rotate-3 gap-2 pr-2 md:flex">
-            {BANNER_SHOWCASE.map((b) => (
+          {/* decorative book cover */}
+          <div className="hidden shrink-0 -rotate-3 pr-2 md:flex">
+            <button
+              onClick={() => onOpen(banner.book)}
+              className="transition-transform duration-300 hover:scale-105 active:scale-95 cursor-pointer"
+              title={`Read preview of ${banner.title}`}
+            >
               <BookCover
-                key={b.id}
-                book={b}
-                className="h-36 w-24 shadow-[0_14px_40px_rgba(0,0,0,0.12)]"
+                key={banner.book.id}
+                book={banner.book}
+                className="h-36 w-24 shadow-[0_14px_40px_rgba(0,0,0,0.12)] animate-scale-in"
               />
-            ))}
+            </button>
           </div>
         </div>
 
@@ -858,16 +1046,30 @@ function BannerCarousel() {
                 onClick={() => setIndex(i)}
                 aria-label={`Slide ${i + 1}`}
                 className={`h-1.5 rounded-full transition-all ${
-                  i === index ? 'w-5 bg-black/70' : 'w-1.5 bg-black/20'
+                  i === index 
+                    ? `w-5 ${banner.isDark ? 'bg-white/80' : 'bg-black/70'}` 
+                    : `w-1.5 ${banner.isDark ? 'bg-white/20' : 'bg-black/20'}`
                 }`}
               />
             ))}
           </div>
-          <span className="ml-1 flex overflow-hidden rounded-full border border-black/10 bg-white/80 shadow-sm backdrop-blur">
-            <button onClick={prev} className="p-1 text-black/60 hover:bg-black/5" aria-label="Previous">
+          <span className={`ml-1 flex overflow-hidden rounded-full border shadow-sm backdrop-blur transition-colors duration-500 ${
+            banner.isDark 
+              ? 'border-white/10 bg-black/30 text-white' 
+              : 'border-black/10 bg-white/80 text-black'
+          }`}>
+            <button 
+              onClick={prev} 
+              className={`p-1 transition-colors ${banner.isDark ? 'hover:bg-white/10 text-white/80' : 'hover:bg-black/5 text-black/60'}`} 
+              aria-label="Previous"
+            >
               <ChevronLeft className="h-3.5 w-3.5" />
             </button>
-            <button onClick={next} className="p-1 text-black/60 hover:bg-black/5" aria-label="Next">
+            <button 
+              onClick={next} 
+              className={`p-1 transition-colors ${banner.isDark ? 'hover:bg-white/10 text-white/80' : 'hover:bg-black/5 text-black/60'}`} 
+              aria-label="Next"
+            >
               <ChevronRight className="h-3.5 w-3.5" />
             </button>
           </span>
@@ -1429,9 +1631,6 @@ const SIDE_ADS = [
   },
 ]
 
-const BANNER_SHOWCASE = MODERN_BESTSELLERS.slice(0, 3).filter(
-  (book): book is Book => Boolean(book),
-)
 
 function SideAds() {
   const [closed, setClosed] = useState<string[]>([])
@@ -1815,7 +2014,7 @@ export default function App() {
             onDismiss={() => setDismissedAt(engagements.length)}
           />
         )}
-        <BannerCarousel />
+        <BannerCarousel onOpen={openBook} />
         <BestsellerSection onOpen={openBook} />
         <ForYouSection
           onOpen={openBook}
