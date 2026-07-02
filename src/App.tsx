@@ -38,7 +38,9 @@ import {
   fetchBookDetail,
   fetchBooks,
   fetchRecommendationFeed,
+  fetchRecommendationReason,
   logInteraction,
+  reasonToSentence,
   refreshRecommendationFeed,
 } from './api'
 import {
@@ -396,6 +398,16 @@ function ViewerModal({ book, onClose }: { book: Book; onClose: () => void }) {
               Out of print in stores — permanently readable only through the
               tory cloud archive.
             </p>
+          )}
+          {book.whyRecommended && (
+            <div className="rounded border border-gray-200 bg-white p-3">
+              <p className="flex items-center gap-1.5 text-[11px] font-bold text-gray-900">
+                <Zap className="h-3.5 w-3.5 text-dancheong" /> Why this pick?
+              </p>
+              <p className="mt-1 text-[11px] leading-relaxed text-gray-500">
+                {book.whyRecommended}
+              </p>
+            </div>
           )}
           <div className="mt-auto rounded border border-gray-200 bg-white p-3">
             <p className="flex items-center gap-1.5 text-[11px] font-bold text-gray-900">
@@ -1613,7 +1625,20 @@ export default function App() {
           .then((detail) =>
             setSelected((cur) =>
               cur && cur.id === book.id && cur.fromApi
-                ? { ...apiDetailToBook(detail), kContentTags: cur.kContentTags }
+                ? {
+                    ...apiDetailToBook(detail),
+                    kContentTags: cur.kContentTags,
+                    whyRecommended: cur.whyRecommended,
+                  }
+                : cur,
+            ),
+          )
+          .catch(() => {})
+        fetchRecommendationReason(userId, book.id)
+          .then((reason) =>
+            setSelected((cur) =>
+              cur && cur.id === book.id && cur.fromApi
+                ? { ...cur, whyRecommended: reasonToSentence(reason) }
                 : cur,
             ),
           )

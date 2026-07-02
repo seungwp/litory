@@ -38,6 +38,14 @@ export interface ApiBookListItem {
 
 export interface ApiBookDetail extends ApiBookListItem {
   description: string | null
+  /** Preferred user-facing description (AI summary when metadata-only) */
+  displayDescription: string | null
+  aiSummary: string | null
+  descriptionSource:
+    | 'AI_GENERATED_SUMMARY'
+    | 'IMPORTED_METADATA_DESCRIPTION'
+    | 'CONTENT_BASED_DESCRIPTION'
+    | null
   originalTitle: string | null
   translatedLanguage: string | null
   translator: string | null
@@ -46,6 +54,24 @@ export interface ApiBookDetail extends ApiBookListItem {
   contentAvailable: boolean
   sourceType: 'MANUAL' | 'MD_FULLTEXT' | 'XLSX_METADATA'
   active: boolean
+}
+
+export interface ApiRecommendationReason {
+  userId: number
+  bookId: number
+  bookTitle: string
+  personalizedReasonText: string
+  aiReasonText: string | null
+  keywordTags: string[]
+  matchedGenres: { code: string; name: string }[]
+  recentReadBooks: {
+    bookId: number
+    title: string
+    authorName: string | null
+    matchedGenreCodes: string[]
+  }[]
+  reasonType: string
+  generatedAt: string
 }
 
 export interface ApiRecommendationItem {
@@ -167,6 +193,13 @@ export function fetchRecommendationFeed(userId: number, limit = 10) {
   })
 }
 
+export function fetchRecommendationReason(userId: number, bookId: number) {
+  return request<ApiRecommendationReason>(
+    `/recommendations/books/${bookId}/reason`,
+    { userId },
+  )
+}
+
 export function refreshRecommendationFeed(userId: number, limit = 10) {
   return request<ApiRecommendationFeed>('/recommendations/refresh', {
     method: 'POST',
@@ -252,10 +285,43 @@ export function apiDetailToBook(detail: ApiBookDetail): Book {
     originalTitle: detail.originalTitle ?? undefined,
     translatedLanguages: languageToCode(detail.translatedLanguage),
     isOutOfPrint: !detail.contentAvailable,
+    // prefer the AI-enriched description the backend now serves
     description:
+      detail.displayDescription ??
+      detail.aiSummary ??
       detail.description ??
       `${detail.title} — imported from the tory cloud library.`,
   }
+}
+
+/**
+ * The backend's reason strings are Korean; compose an English sentence
+ * from the structured fields instead (titles stay as-is).
+ */
+export function reasonToSentence(reason: ApiRecommendationReason): string {
+  const parts: string[] = []
+  if (reason.recentReadBooks.length > 0) {
+    const titles = reason.recentReadBooks
+      .slice(0, 2)
+      .map((b) => `“${b.title}”`)
+      .join(' and ')
+    parts.push(`Because you recently read ${titles}`)
+  }
+  if (reason.matchedGenres.length > 0) {
+    const genres = reason.matchedGenres
+      .slice(0, 2)
+      .map((g) => genreLabel([g.code]))
+      .join(', ')
+    parts.push(
+      parts.length
+        ? `— a close match for your ${genres} taste.`
+        : `This matches your ${genres} taste.`,
+    )
+  }
+  if (parts.length === 0) {
+    return 'Picked for your reading history by the tory recommendation engine.'
+  }
+  return parts.join(' ')
 }
 
 /** Backend reason strings arrive in Korean — map the known ones to English */

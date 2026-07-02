@@ -42,6 +42,8 @@ export interface Book {
   sourceUrl?: string
   /** true → this book came from the backend API (id is a server id) */
   fromApi?: boolean
+  /** Personalized recommendation reason (from the backend, per user) */
+  whyRecommended?: string
 }
 
 /** One horizontally-scrolling curated shelf */
