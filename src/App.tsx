@@ -1417,7 +1417,7 @@ const SIDE_ADS = [
     lines: ['2026 Korean', 'Literature', 'Translation', 'Awards'],
     sub: 'Hosted by LTI Korea — submissions open now',
     cta: 'Learn More',
-    href: '#curation',
+    href: 'https://www.ltikorea.or.kr/',
   },
   {
     id: 'left-netflix',
@@ -1426,7 +1426,7 @@ const SIDE_ADS = [
     lines: ['82년생 김지영', 'Now Streaming', 'Tonight'],
     sub: 'Watch Kim Jiyoung, Born 1982 on your next screen.',
     cta: 'Stream Now',
-    href: '#bestsellers',
+    href: 'https://www.netflix.com/',
   },
   {
     id: 'right',
@@ -1435,7 +1435,7 @@ const SIDE_ADS = [
     lines: ['문학동네', 'Munhakdongne', "Korea's #1", 'Literary Publisher'],
     sub: 'Home of Korea’s most-loved novels — now streaming on Litory.',
     cta: 'Explore Titles',
-    href: '#bestsellers',
+    href: 'https://munhak.com/',
   },
 ]
 
@@ -1449,7 +1449,11 @@ function SideAds() {
   return (
     <>
       {SIDE_ADS.filter((ad) => !closed.includes(ad.id)).map((ad) => (
-        <aside key={ad.id} style={ad.position} className="fixed z-30 w-40">
+        <aside
+          key={ad.id}
+          style={ad.position}
+          className="fixed z-30 hidden w-40 lg:block"
+        >
           <div
             className={`relative overflow-hidden rounded-[1.5rem] border shadow-[0_12px_35px_rgba(0,0,0,0.08)] ${
               ad.id === 'left-netflix'
@@ -1470,7 +1474,7 @@ function SideAds() {
               <button
                 onClick={() => setClosed((c) => [...c, ad.id])}
                 aria-label="Close ad"
-                className={`rounded p-0.5 ${
+                className={`relative z-20 rounded p-0.5 ${
                   ad.id === 'left-netflix'
                     ? 'text-white/45 hover:bg-white/10 hover:text-white'
                     : 'text-black/35 hover:bg-black/5 hover:text-black/55'
@@ -1507,6 +1511,8 @@ function SideAds() {
               </p>
               <a
                 href={ad.href}
+                target={ad.href.startsWith('http') ? '_blank' : undefined}
+                rel={ad.href.startsWith('http') ? 'noreferrer' : undefined}
                 className={`mt-3 block rounded-full py-1.5 text-center text-[10px] font-medium transition ${
                   ad.id === 'left-netflix'
                     ? 'bg-[#e50914] text-white hover:bg-[#f40612]'
