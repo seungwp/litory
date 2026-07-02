@@ -218,7 +218,7 @@ export const COMMUNITY_POSTS: CommunityPost[] = BOOKS.slice(0, 5).map((book, ind
         ? `Reading ${book.translatedTitle} together this week`
         : `What stays with you after ${book.translatedTitle}?`,
   bookId: book.id,
-  author: ['Emily R.', 'tory book club', 'Camille D.', 'Jonas K.', 'Thanh N.'][index] ?? 'Reader',
+  author: ['Emily R.', 'Litory book club', 'Camille D.', 'Jonas K.', 'Thanh N.'][index] ?? 'Reader',
   country: COUNTRIES[index] ?? '🌏',
   tag: POST_TAGS[index] ?? 'Discussion',
   replies: [128, 96, 74, 41, 63][index] ?? 20,
@@ -244,7 +244,7 @@ export const PLANS: Plan[] = [
   },
   {
     id: 'monthly',
-    name: 'tory unlimited',
+    name: 'Litory unlimited',
     price: '$9.9',
     period: 'per month',
     tagline: 'Every translation. Every shelf. One account.',

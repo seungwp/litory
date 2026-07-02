@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────
-//  tory · backend API client (social-yaho Spring Boot)
+//  Litory · backend API client (social-yaho Spring Boot)
 //
 //  Base URL resolution:
 //  · dev  → '' + Vite proxy ('/api' → http://localhost:8080)
@@ -10,7 +10,7 @@
 import type { Book } from './types'
 
 const API_BASE: string = import.meta.env.VITE_API_BASE_URL ?? ''
-const USER_ID_STORAGE_KEY = 'tory.userId'
+const USER_ID_STORAGE_KEY = 'Litory.userId'
 
 /** Common success envelope (spec §1-2) */
 interface ApiEnvelope<T> {
@@ -166,9 +166,9 @@ export async function ensureUser(): Promise<number> {
   const created = await request<{ id: number }>('/users', {
     method: 'POST',
     body: JSON.stringify({
-      email: `demo-${Date.now()}@tory.io`,
-      password: 'tory-demo-1234',
-      nickname: 'tory-reader',
+      email: `demo-${Date.now()}@Litory.io`,
+      password: 'Litory-demo-1234',
+      nickname: 'Litory-reader',
     }),
   })
   localStorage.setItem(USER_ID_STORAGE_KEY, String(created.id))
@@ -270,7 +270,7 @@ export function apiListItemToBook(item: ApiBookListItem): Book {
     genre: genreLabel(item.genres),
     translatedLanguages: ['EN'],
     isOutOfPrint: false,
-    description: item.genres[0]?.name ?? 'Imported from the tory cloud library.',
+    description: item.genres[0]?.name ?? 'Imported from the Litory cloud library.',
     coverColor: COVER_PALETTE[item.id % COVER_PALETTE.length],
     kContentTags: [],
     episodeMinutes: 5 + (item.id % 6),
@@ -290,7 +290,7 @@ export function apiDetailToBook(detail: ApiBookDetail): Book {
       detail.displayDescription ??
       detail.aiSummary ??
       detail.description ??
-      `${detail.title} — imported from the tory cloud library.`,
+      `${detail.title} — imported from the Litory cloud library.`,
   }
 }
 
@@ -319,7 +319,7 @@ export function reasonToSentence(reason: ApiRecommendationReason): string {
     )
   }
   if (parts.length === 0) {
-    return 'Picked for your reading history by the tory recommendation engine.'
+    return 'Picked for your reading history by the Litory recommendation engine.'
   }
   return parts.join(' ')
 }

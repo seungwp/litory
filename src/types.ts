@@ -1,10 +1,10 @@
 // ─────────────────────────────────────────────────────────────
-//  tory · Korean literature streaming platform — domain types
+//  Litory · Korean literature streaming platform — domain types
 // ─────────────────────────────────────────────────────────────
 
 /**
  * Book
- * One translated Korean work integrated into the tory cloud library.
+ * One translated Korean work integrated into the Litory cloud library.
  * Every UI component consumes data strictly through this interface.
  */
 export interface Book {
@@ -22,7 +22,7 @@ export interface Book {
   genre: string
   /** Language codes with an existing translation (e.g. ['EN', 'FR']) */
   translatedLanguages: string[]
-  /** true → out of print, preserved exclusively in the tory archive */
+  /** true → out of print, preserved exclusively in the Litory archive */
   isOutOfPrint: boolean
   /** Short pitch shown on cards and in the viewer */
   description: string

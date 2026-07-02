@@ -326,7 +326,7 @@ function ViewerModal({ book, onClose }: { book: Book; onClose: () => void }) {
 
   const fallback =
     book.excerpt ??
-    `${book.description}\n\n— This preview is demo text reconstructed from the opening of “${book.translatedTitle}”. In the full service, the complete translation streams from the tory cloud library.`
+    `${book.description}\n\n— This preview is demo text reconstructed from the opening of “${book.translatedTitle}”. In the full service, the complete translation streams from the Litory cloud library.`
 
   const pages = useMemo(
     () => paginate(mdToParagraphs(fullText ?? fallback), large ? 1100 : 1600),
@@ -396,7 +396,7 @@ function ViewerModal({ book, onClose }: { book: Book; onClose: () => void }) {
             <p className="rounded bg-[#e8fbf6] p-2 text-[11px] leading-relaxed text-dancheong">
               <Archive className="mr-1 inline h-3 w-3" />
               Out of print in stores — permanently readable only through the
-              tory cloud archive.
+              Litory cloud archive.
             </p>
           )}
           {book.whyRecommended && (
@@ -428,7 +428,7 @@ function ViewerModal({ book, onClose }: { book: Book; onClose: () => void }) {
           <div className="flex items-center justify-between border-b border-gray-200 px-4 py-2.5">
             <div className="flex items-center gap-1.5 text-xs font-medium text-gray-500">
               <BookOpen className="h-4 w-4" />
-              tory reader · preview
+              Litory reader · preview
             </div>
             <div className="flex items-center gap-1">
               <button
@@ -511,7 +511,7 @@ function ViewerModal({ book, onClose }: { book: Book; onClose: () => void }) {
                   </p>
                   <p className="mt-1 text-xs text-gray-500">
                     Keep reading {book.translatedTitle} — and{' '}
-                    {BOOKS.length}+ more translated works — with tory.
+                    {BOOKS.length}+ more translated works — with Litory.
                   </p>
                   <a
                     href="#membership"
@@ -563,7 +563,7 @@ function UtilityBar({ apiOnline }: { apiOnline: boolean | null }) {
     <div className="border-b border-gray-100 bg-white">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-1.5 text-[11px] text-gray-400">
         <div className="flex items-center gap-3">
-          <span className="font-semibold text-gray-500">tory</span>
+          <span className="font-semibold text-gray-500">Litory</span>
           <span className="hidden sm:inline">For Publishers</span>
           <span className="hidden sm:inline">For Translators</span>
           {apiOnline !== null && (
@@ -573,7 +573,7 @@ function UtilityBar({ apiOnline }: { apiOnline: boolean | null }) {
               }`}
               title={
                 apiOnline
-                  ? 'Connected to the tory backend'
+                  ? 'Connected to the Litory backend'
                   : 'Backend unreachable — showing bundled demo data'
               }
             >
@@ -654,14 +654,14 @@ function MainHeader({
   return (
     <div className="bg-white">
       <div className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-3.5 sm:gap-8">
-        <a href="#top" title="tory" className="group flex shrink-0 items-center gap-1.5">
+        <a href="#top" title="Litory" className="group flex shrink-0 items-center gap-1.5">
           <img
             src={`${import.meta.env.BASE_URL}tori.png`}
             alt="Tori the mascot"
             className="h-10 w-10 animate-tori-bob group-hover:animate-tori-jump"
           />
           <span className="text-2xl font-extrabold tracking-tight text-gray-900">
-            tory
+            Litory
           </span>
         </a>
 
@@ -1012,7 +1012,7 @@ function ForYouSection({
             title="Picked For You"
             subtitle={
               liveMode
-                ? 'Ranked live by the tory recommendation engine — reading anything reshapes this feed'
+                ? 'Ranked live by the Litory recommendation engine — reading anything reshapes this feed'
                 : 'Choose a reading mood and the archive reshapes itself around it'
             }
           />
@@ -1519,7 +1519,7 @@ function SideAds() {
             {ad.id === 'right' && (
               <img
                 src={`${import.meta.env.BASE_URL}tori.png`}
-                alt="tory character"
+                alt="Litory character"
                 className="pointer-events-none absolute right-2 top-2 h-14 w-14 rotate-12 rounded-full bg-white p-0.5 shadow-[0_8px_22px_rgba(0,0,0,0.12)]"
               />
             )}
@@ -1637,7 +1637,7 @@ function RecommendationBanner({
             </p>
             <p className="text-[11px] text-gray-500">
               {apiOnline
-                ? 'Freshly ranked by the tory recommendation engine, just for you'
+                ? 'Freshly ranked by the Litory recommendation engine, just for you'
                 : 'Picked from the archive based on your recent reading'}
             </p>
           </div>
@@ -1658,7 +1658,7 @@ function RecommendationBanner({
 // ═══════════════════════════════════════════════════════════════
 
 const FOOTER_LINKS = [
-  'About tory',
+  'About Litory',
   'Terms of Service',
   'Privacy Policy',
   'Youth Protection',
@@ -1689,15 +1689,15 @@ function Footer() {
 
         <div className="mt-5 space-y-1 text-[11px] leading-relaxed text-gray-400">
           <p>
-            tory Inc. · CEO Team Yaho · 123 Teheran-ro, Gangnam-gu, Seoul, Korea ·
+            Litory Inc. · CEO Team Yaho · 123 Teheran-ro, Gangnam-gu, Seoul, Korea ·
             Business License 123-45-67890
           </p>
           <p>
-            Customer Center support@tory.io (09:00–18:00 KST, weekdays) · Catalog
+            Customer Center support@Litory.io (09:00–18:00 KST, weekdays) · Catalog
             data adapted from LTI Korea translation grant statistics (late 2024)
           </p>
           <p className="pt-1 text-gray-300">
-            © 2026 tory. Hackathon demo — all titles shown for demonstration
+            © 2026 Litory. Hackathon demo — all titles shown for demonstration
             purposes.
           </p>
         </div>
