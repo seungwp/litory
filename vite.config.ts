@@ -7,6 +7,10 @@ export default defineConfig({
   base: '/litory/',
   plugins: [react()],
   server: {
+    allowedHosts: [
+      'u-tory.cloud',
+      'www.u-tory.cloud',
+    ],
     // dev-only: forward API calls to the local Spring Boot backend (no CORS)
     proxy: {
       '/api': {
