@@ -226,7 +226,7 @@ function ViewerModal({ book, onClose }: { book: Book; onClose: () => void }) {
 
   const body =
     book.excerpt ??
-    `${book.description}\n\n— This preview is demo text reconstructed from the opening of “${book.translatedTitle}”. In the full service, the complete translation streams from the Litory cloud library.`
+    `${book.description}\n\n— This preview is demo text reconstructed from the opening of “${book.translatedTitle}”. In the full service, the complete translation streams from the Tory cloud library.`
 
   return (
     <div
@@ -270,7 +270,7 @@ function ViewerModal({ book, onClose }: { book: Book; onClose: () => void }) {
             <p className="rounded bg-red-50 p-2 text-[11px] leading-relaxed text-dancheong">
               <Archive className="mr-1 inline h-3 w-3" />
               Out of print in stores — permanently readable only through the
-              Litory cloud archive.
+              Tory cloud archive.
             </p>
           )}
           <div className="mt-auto rounded border border-gray-200 bg-white p-3">
@@ -292,7 +292,7 @@ function ViewerModal({ book, onClose }: { book: Book; onClose: () => void }) {
           <div className="flex items-center justify-between border-b border-gray-200 px-4 py-2.5">
             <div className="flex items-center gap-1.5 text-xs font-medium text-gray-500">
               <BookOpen className="h-4 w-4" />
-              Litory Reader · Preview
+              Tory Reader · Preview
             </div>
             <div className="flex items-center gap-1">
               <button
@@ -368,7 +368,7 @@ function UtilityBar() {
     <div className="border-b border-gray-100 bg-white">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-1.5 text-[11px] text-gray-400">
         <div className="flex items-center gap-3">
-          <span className="font-semibold text-gray-500">Litory</span>
+          <span className="font-semibold text-gray-500">Tory</span>
           <span className="hidden sm:inline">For Publishers</span>
           <span className="hidden sm:inline">For Translators</span>
         </div>
@@ -398,16 +398,15 @@ function MainHeader() {
   return (
     <div className="bg-white">
       <div className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-3.5 sm:gap-8">
-        <a href="#top" title="Litory" className="group flex shrink-0 items-center">
-          <span className="text-2xl font-extrabold tracking-tight text-gray-900">
-            Li
-          </span>
-          {/* Tori the mascot stands in for the “tory” in Litory */}
+        <a href="#top" title="Tory" className="group flex shrink-0 items-center gap-1.5">
           <img
             src={`${import.meta.env.BASE_URL}tori.png`}
-            alt="tory"
-            className="ml-0.5 h-10 w-10 animate-tori-bob group-hover:animate-tori-jump"
+            alt="Tori the mascot"
+            className="h-10 w-10 animate-tori-bob group-hover:animate-tori-jump"
           />
+          <span className="text-2xl font-extrabold tracking-tight text-gray-900">
+            Tory
+          </span>
         </a>
 
         {/* search bar */}
@@ -1131,7 +1130,7 @@ function MembershipSection() {
       <div className="mx-auto max-w-6xl px-4">
         <div className="mb-8 text-center">
           <h2 className="text-xl font-bold text-gray-900 sm:text-2xl">
-            Litory Membership
+            Tory Membership
           </h2>
           <p className="mt-1 text-sm text-gray-500">
             One subscription, every translation. First month free.
@@ -1194,7 +1193,7 @@ function MembershipSection() {
 // ═══════════════════════════════════════════════════════════════
 
 const FOOTER_LINKS = [
-  'About Litory',
+  'About Tory',
   'Terms of Service',
   'Privacy Policy',
   'Youth Protection',
@@ -1225,15 +1224,15 @@ function Footer() {
 
         <div className="mt-5 space-y-1 text-[11px] leading-relaxed text-gray-400">
           <p>
-            Litory Inc. · CEO Team Yaho · 123 Teheran-ro, Gangnam-gu, Seoul, Korea ·
+            Tory Inc. · CEO Team Yaho · 123 Teheran-ro, Gangnam-gu, Seoul, Korea ·
             Business License 123-45-67890
           </p>
           <p>
-            Customer Center support@litory.io (09:00–18:00 KST, weekdays) · Catalog
+            Customer Center support@tory.io (09:00–18:00 KST, weekdays) · Catalog
             data adapted from LTI Korea translation grant statistics (late 2024)
           </p>
           <p className="pt-1 text-gray-300">
-            © 2026 Litory. Hackathon demo — all titles shown for demonstration
+            © 2026 Tory. Hackathon demo — all titles shown for demonstration
             purposes.
           </p>
         </div>
